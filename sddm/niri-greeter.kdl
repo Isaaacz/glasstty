@@ -1,0 +1,56 @@
+// niri as the compositor of the SDDM login screen (instead of weston).
+// Installed to /etc/sddm/niri-greeter.kdl by `sddm-thyx.sh ajustar`.
+//
+// Why: under weston the greeter's pointer worked but was invisible on this
+// laptop; niri draws the cursor fine here. SDDM starts this, waits for a
+// wayland-? socket and then opens the thyx greeter in it.
+//
+// SECURITY: no binds at all. On the login screen nobody can spawn a program,
+// a terminal, take screenshots or quit to anything by keyboard.
+
+input {
+    keyboard {
+        xkb {
+            layout "br"
+        }
+        numlock
+    }
+    touchpad {
+        tap
+        drag true
+    }
+}
+
+cursor {
+    xcursor-theme "Adwaita"
+    xcursor-size 24
+}
+
+layout {
+    gaps 0
+    focus-ring { off; }
+    border { off; }
+    background-color "#000000"
+}
+
+// The greeter is the only window: fullscreen, no decorations.
+window-rule {
+    open-fullscreen true
+}
+
+prefer-no-csd
+
+hotkey-overlay {
+    skip-at-startup
+}
+
+// No X11 on the login screen.
+xwayland-satellite {
+    off
+}
+
+// Nothing is written anywhere (the sddm user has no Pictures folder).
+screenshot-path null
+
+binds {
+}

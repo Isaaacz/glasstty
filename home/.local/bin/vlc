@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# VLC with the wallpaper's palette.
+#
+# It is the only Qt5 application on the machine, and that is why it needs this
+# detour. The desktop exports QT_QPA_PLATFORMTHEME=qt6ct (see environment.d),
+# and Qt5 cannot resolve that name: it looks for a libqt6ct.so among ITS
+# plugins, does not find it and is left without a platform theme, that is,
+# with the factory grey (#efefef) in the middle of a pywal desktop. The
+# variable does not accept a list of alternatives -tested: it is read
+# literally, it does not fall through to the next one-, so the only way out is
+# to override it for this process.
+#
+# Before qt6ct the desktop used the gtk3 theme, and the symptom was the same
+# for a different reason: Qt5's gtk3 plugin provides dialogs and fonts, never
+# the colours. Qt5 has always needed a theme of its own.
+#
+# The scheme is written by ~/.config/glasstty/scripts/qt-pywal.py on every
+# wallpaper change.
+#
+# If qt5ct is not installed it carries on as before, without breaking
+# anything.
+if [ -e /usr/lib/qt/plugins/platformthemes/libqt5ct.so ]; then
+  export QT_QPA_PLATFORMTHEME=qt5ct
+fi
+exec /usr/bin/vlc "$@"

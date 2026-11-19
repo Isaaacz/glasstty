@@ -1,0 +1,5 @@
+# glasstty: default apps for the niri session ONLY.
+# Per the XDG spec, $desktop-mimeapps.list is read when XDG_CURRENT_DESKTOP
+# matches (niri here) and wins over mimeapps.list, which GNOME also uses.
+[Default Applications]
+inode/directory=org.gnome.Nautilus.desktop

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# spotify — run the Spotify Flatpak installed for this user (flatpak --user),
+# which spicetify can patch without root. The rice's scripts call `spotify`.
+exec flatpak run --user com.spotify.Client "$@"

@@ -1,0 +1,15 @@
+[Desktop Entry]
+# glasstty: the shell's own Settings (Super+,) in the app search.
+# OnlyShowIn=niri hides it from GNOME's menus, where the shell does not run.
+Type=Application
+Name=Ajustes do shell
+Name[en]=Shell settings
+GenericName=Configurações do shell
+Comment=Aparência, barra, notch, monitores, atalhos e idioma do pocket-dots
+Keywords=configurações;configuracoes;ajustes;settings;preferências;aparência;tema;barra;notch;shell;pocket-dots;
+Icon=preferences-desktop-theme-global
+Exec=qs ipc call notch settings
+Terminal=false
+Categories=Settings;DesktopSettings;
+OnlyShowIn=niri;
+StartupNotify=false

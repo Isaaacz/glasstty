@@ -1,0 +1,50 @@
+name: checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  scripts:
+    name: shell and python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: List shell scripts
+        run: |
+          git ls-files | while read -r f; do
+            head -1 "$f" 2>/dev/null | grep -qE '^#!.*\b(ba)?sh' && echo "$f"
+          done > /tmp/shell-files
+          wc -l < /tmp/shell-files
+
+      - name: Shell syntax (bash -n)
+        run: xargs -a /tmp/shell-files -d '\n' -n1 bash -n
+
+      - name: ShellCheck (errors)
+        run: xargs -a /tmp/shell-files -d '\n' shellcheck -S error
+
+      - name: Python syntax
+        run: |
+          { git ls-files '*.py'
+            git ls-files | while read -r f; do
+              head -1 "$f" 2>/dev/null | grep -q '^#!.*python' && echo "$f"
+            done; } | sort -u > /tmp/py-files
+          python3 - /tmp/py-files <<'PY'
+          import ast, sys
+          files = open(sys.argv[1]).read().split()
+          for f in files:
+              ast.parse(open(f).read(), f)
+          print(f"{len(files)} python files parse")
+          PY
+
+  niri:
+    name: niri config
+    runs-on: ubuntu-latest
+    container: registry.fedoraproject.org/fedora:45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install niri
+        run: dnf install -y --setopt=install_weak_deps=False niri
+      - name: niri validate
+        run: niri validate -c home/.config/niri/config.kdl

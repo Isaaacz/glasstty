@@ -1,0 +1,205 @@
+**/.git-credentials
+**/hosts.yml
+**/credentials
+**/credentials.json
+# The character classes are not decoration: a .gitignore is case-sensitive,
+# and written as `**/*token*` it let API_TOKEN.txt or Secret.json through.
+# Checked with `git check-ignore -v`.
+**/*[Tt][Oo][Kk][Ee][Nn]*
+**/*[Ss][Ee][Cc][Rr][Ee][Tt]*
+# An OAuth token is not called "token" anywhere, so the two patterns above
+# let it through untouched. The credentials live in ~/.config/environment.d/,
+# outside the repo and one per file; the envvars.conf next to them IS
+# versioned, and that is why they are kept apart. This is the safety net in
+# case the whole directory is ever dragged in.
+**/*[Oo][Aa][Uu][Tt][Hh]*
+**/*.pem
+**/*.key
+**/id_rsa*
+**/id_ed25519*
+**/*.gpg
+**/*.kdbx
+**/.netrc
+**/*.p12
+**/*.crt
+
+**/*.nmconnection
+
+**/.ssh/
+**/.gnupg/
+**/.pki/
+**/.mozilla/
+**/.local/state/
+**/Web Data*
+**/key4.db
+**/logins.json
+
+**/.npmrc
+**/.pypirc
+**/.env
+**/*.keyring
+**/*.keystore
+**/rclone.conf
+**/.docker/config.json
+**/Local Storage/
+
+**/.gitconfig.local
+
+# RustDesk keeps the machine's key pair, its ID, the permanent password and
+# the screen-capture permission in these files: anyone holding them can
+# connect to this laptop. No pattern above catches them (the capture token
+# lives in a key, not in the file name), hence the whole directory.
+# RustDesk is not part of the rice either: it is installed by hand.
+home/.config/rustdesk/
+**/RustDesk*.toml
+home/.local/share/logs/RustDesk/
+**/[Rr]ust[Dd]esk/
+
+# The rest of the places where programs keep keys, sessions or passwords and
+# that no pattern above catches by name: agent logins (.credentials.json has a
+# leading dot, so **/credentials.json misses it), the ssh keys that are not
+# rsa or ed25519, the machine's own ssh and wifi secrets if /etc is ever
+# copied into system/, VPN state, the face model of the login screen, and the
+# browser and Spotify sessions.
+**/.credentials.json
+**/.claude.json
+**/auth.json
+**/.codex/
+**/id_ecdsa*
+**/id_dsa*
+**/ssh_host_*
+**/system-connections/
+**/*.psk
+**/wpa_supplicant*.conf
+**/wireguard/
+**/*.ovpn
+**/tailscaled.state
+**/etc/shadow*
+**/etc/gshadow*
+**/howdy/models/
+**/.face
+**/.face.icon
+**/keyrings/
+**/kwalletd/
+**/.env.*
+**/.pgpass
+**/.aws/
+**/.kube/
+**/google-chrome/
+**/chromium/
+**/spotify/Users/
+**/obs-studio/basic/profiles/*/service.json
+
+home/.config/spotify/prefs
+home/.config/gh/
+**/sessionData/
+**/Local State
+**/Cookies*
+**/Login Data*
+
+RULES.md
+verify
+# Working notes, not configuration: the motion specification, the reference
+# readings and the notes on the package lists. They stay where they were
+# -~/.config and packages/-, but they do not come back into the repo.
+home/.config/motion-language.md
+home/.config/motion-language.en.md
+home/.config/motion-referencias.md
+home/.config/motion-references.en.md
+packages/NOTES.md
+# And the general rule, for the next notebook that gets written: a loose .md
+# at the root of ~/.config is never configuration, it is notes. The READMEs
+# that ARE versioned live inside their component's directory
+# (quickshell/README.md), so this pattern does not touch them.
+home/.config/*.md
+# What was adapted from other projects is credited in the HEADER of each file,
+# which is where the GPL wants it and where it does not get lost. The
+# notebooks that discuss it on top of that are working notes, not
+# configuration.
+home/.config/quickshell/IMPASTO.md
+home/.claude/
+home/.codex/
+home/.copilot/
+home/.gemini/
+home/.mcp.json
+home/.agent-memory/
+**/memory.json
+
+**/.zsh_history
+**/.bash_history
+**/.python_history
+**/*[Hh][Ii][Ss][Tt][Oo][Rr][Yy]*
+# ...except this one, which is shell code and not a history of anything.
+!home/.config/quickshell/HistoryGraph.qml
+
+home/.cache/
+**/__pycache__/
+**/*.pyc
+**/.venv/
+**/node_modules/
+
+home/.config/vesktop/settings/quickCSS.css
+home/.config/Vencord/settings/quickCSS.css
+home/.config/equibop/settings/quickCSS.css
+home/.config/yazi/flavors/pywal.yazi/
+
+home/.config/systemd/user/*.wants/
+
+# The LIVE language file of the lock screen. It is seeded by copying
+# language.es.conf or language.en.conf over it, and those two ARE versioned.
+# Without this line, './install.sh --lang en' wrote inside the repo itself
+# -in --link mode, ~/.config/glasstty IS the repo- and left git dirty.
+home/.config/glasstty/language.conf
+# Same thing, for the same reason: the switch in Ajustes > Apariencia > Efectos
+# (Settings > Appearance > Effects) writes it every time you touch it, and in
+# --link mode that lands inside the repo. The defaults already live, versioned,
+# in hyprland.lua, so nothing is lost here: if the file is missing,
+# hyprland.lua is in charge.
+# The keyboard of each machine, for the same reason: install.sh writes it from
+# what localectl reports, and in --link mode that lands inside the repo. If it
+# is missing, the layout written in hyprland.lua is in charge.
+# And the same with the Qt palettes: qt-pywal.py rewrites them on EVERY
+# wallpaper change (its own header says "no editar a mano", do not edit by
+# hand). The qt5ct.conf/qt6ct.conf next to them ARE versioned: they are real
+# settings -dialogs, typography- and the script only rewrites the four keys
+# of them that the palette needs in order to apply
+# (color_scheme_path, custom_palette, style and icon_theme).
+home/.config/qt5ct/colors/
+home/.config/qt6ct/colors/
+# kdeglobals, on the other hand, IS versioned even though the same script
+# rewrites it: besides colours it carries the desktop fonts and the file
+# dialog settings, which ARE part of the rice. The price is that in --link
+# mode it will show up as modified after every wallpaper change; what is in
+# the repo is the seed a fresh install starts from.
+home/.config/poke-theme/state
+home/.config/spicetify/config-xpui.ini
+
+home/.config/vlc/vlc-qt-interface.conf
+# The file manager bookmarks point to HIS folders: uni, ia-local, other.
+# A stranger would get three broken entries, and we would be telling them how
+# his home is organised into the bargain. If some day a generic version is to
+# be published (Descargas, Imagenes, Videos, dotfiles), let it be a file
+# written on purpose for that and not the copy from this machine.
+home/.config/gtk-3.0/bookmarks
+
+*.bak
+*.bak-*
+.bak-*
+*.tar.gz
+*.orig
+*.rej
+*~
+.DS_Store
+
+.dotfiles-backup/
+
+home/Pictures/wallpapers/.descartes/
+
+# The notch clock's Game Boy font has no licence, so it never travels in the
+# repo (Appearance.qml explains why); this keeps a stray `git add -A` from
+# publishing it.
+home/.local/share/fonts/pokemon-font.ttf
+
+# Generated from the pywal palette at every wallpaper change
+# (spicetify-catppuccin.py writes color.base.ini + the [pywal] block).
+home/.config/spicetify/Themes/catppuccin/color.ini

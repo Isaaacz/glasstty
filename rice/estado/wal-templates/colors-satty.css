@@ -1,0 +1,19 @@
+/* Satty's interface; the annotation colours stay high-contrast. */
+.outer_box,
+.toolbar {{
+    color: {foreground};
+    background-color: {background}e6;
+}}
+
+.toolbar button {{
+    color: {foreground};
+}}
+
+.toolbar button:hover {{
+    background-color: {color4}44;
+}}
+
+.toolbar button:checked {{
+    color: {background};
+    background-color: {color4};
+}}

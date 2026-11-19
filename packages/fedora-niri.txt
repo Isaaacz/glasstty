@@ -1,0 +1,75 @@
+# Fedora 45 + niri: what the shell and its scripts call by name.
+# Installed by install-niri.sh with `dnf install --skip-unavailable`.
+# quickshell comes from the COPR errornointernet/quickshell, which the installer
+# enables first.
+
+# --- the session
+niri
+quickshell
+wlsunset
+
+# --- Qt modules the QML imports (QtQuick.Effects, Shapes, folderlistmodel, images)
+qt6-qtsvg
+qt6-qtimageformats
+qt6-qt5compat
+qt6-qtmultimedia
+qt6-qtshadertools
+
+# --- services the Quickshell modules talk to
+NetworkManager
+bluez
+upower
+pipewire
+wireplumber
+
+# --- the notch's helpers
+cava
+cliphist
+wl-clipboard
+brightnessctl
+playerctl
+jq
+python3-dbus
+python3-gobject
+python3-pillow
+python3-numpy
+libnotify
+ffmpegthumbnailer
+ImageMagick
+
+# --- screenshots / recording / OCR / picker
+grim
+slurp
+wf-recorder
+tesseract
+tesseract-langpack-por
+wtype
+
+# --- session pieces niri does not bring itself
+xdg-desktop-portal-gnome
+xdg-desktop-portal-gtk
+gnome-keyring
+mate-polkit
+swayidle
+swaylock
+swaybg
+xwayland-satellite
+
+# --- apps the binds open
+kitty
+nautilus
+fastfetch
+satty
+hyprpicker
+imv
+mpv
+pavucontrol
+nm-connection-editor
+
+# --- fonts / theme
+adwaita-sans-fonts
+jetbrains-mono-fonts
+adw-gtk3-theme
+
+# --- pywal (not packaged): installed with pipx by install-niri.sh
+pipx

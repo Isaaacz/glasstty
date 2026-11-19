@@ -1,0 +1,54 @@
+# Portuguese for the scripts' notifications (this fork). One line per string:
+# the Spanish original, a TAB, the Portuguese. lang.sh looks the Spanish up
+# when the language is "pt"; anything missing stays in Spanish.
+Activada	Ativada
+Activada · 4000K	Ativada · 4000K
+Ahorro de energía normal restaurado.	Economia de energia normal restaurada.
+Anotar captura	Anotar captura
+Captura	Captura
+Captura de pantalla	Captura de tela
+Color copiado	Cor copiada
+Compilando dynamic-cursors por primera vez…	Compilando o dynamic-cursors pela primeira vez…
+Copiada al portapapeles · pulsa para editar	Copiada para a área de transferência · clique para editar
+Cuentagotas	Conta-gotas
+Desactivada	Desativada
+Editar	Editar
+Editar captura	Editar captura
+Error al capturar	Erro ao capturar
+Esto necesita una terminal interactiva.	Isto precisa de um terminal interativo.
+Fallo al consultar · detalles en	Falha ao consultar · detalhes em
+Grabacion	Gravação
+Grabación	Gravação
+Grabando… (repite la tecla para parar)	Gravando… (aperte a tecla de novo para parar)
+Guardada en	Salva em
+Imagen	Imagem
+La grabación anterior se cortó sola y no dejó vídeo	A gravação anterior parou sozinha e não deixou vídeo
+La grabación anterior se cortó sola; el vídeo a medias está en	A gravação anterior parou sozinha; o vídeo incompleto está em
+Luz nocturna	Luz noturna
+MODO REMOTO ACTIVADO	MODO REMOTO ATIVADO
+Modo lectura	Modo leitura
+Modo remoto ACTIVADO	Modo remoto ATIVADO
+Modo remoto desactivado	Modo remoto desativado
+Modo remoto desactivado: hypridle vuelve a lo de siempre	Modo remoto desativado: o hypridle volta ao normal
+No disponible en niri (sin shaders de pantalla)	Indisponível no niri (sem shaders de tela)
+No encuentro esa imagen	Não encontrei essa imagem
+No se detectó texto	Nenhum texto detectado
+No se pudieron consultar las actualizaciones	Não foi possível consultar as atualizações
+No se pudo iniciar wf-recorder	Não foi possível iniciar o wf-recorder
+Otra consulta de actualizaciones sigue en curso	Outra consulta de atualizações ainda está em andamento
+Pywal no pudo generar la paleta	O pywal não conseguiu gerar a paleta
+Recompilando dynamic-cursors para este Hyprland…	Recompilando o dynamic-cursors para este Hyprland…
+Sin actualizaciones	Sem atualizações
+Sin sonido: no hay salida por defecto	Sem som: não há saída padrão
+Sin suspensión. RustDesk accesible desde fuera.	Sem suspensão. RustDesk acessível de fora.
+Sistema actualizado	Sistema atualizado
+Tema dinámico	Tema dinâmico
+Texto copiado al portapapeles	Texto copiado para a área de transferência
+Ya estás eligiendo la zona a grabar	Você já está escolhendo a área a gravar
+actualizaciones disponibles	atualizações disponíveis
+con sonido	com som
+dynamic-cursors no pudo cargarse	o dynamic-cursors não pôde ser carregado
+repos aun no sincronizados	repositórios ainda não sincronizados
+repos sincronizados a las	repositórios sincronizados às
+sin rebote	sem rebote
+wf-recorder no terminó todavía	o wf-recorder ainda não terminou

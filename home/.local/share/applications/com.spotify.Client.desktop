@@ -1,0 +1,15 @@
+[Desktop Entry]
+# pocket-dots: the user Flatpak of Spotify with the DevTools port, so
+# spicetify-push-colors.py can recolour the open window (see spotify.desktop).
+Type=Application
+Name=Spotify
+GenericName=Music Player
+Icon=com.spotify.Client
+Exec=flatpak run --user --branch=stable --arch=x86_64 --command=spotify --file-forwarding com.spotify.Client --remote-debugging-port=9333 --remote-allow-origins=http://127.0.0.1:9333 @@u %U @@
+Terminal=false
+MimeType=x-scheme-handler/spotify;
+Categories=Audio;Music;Player;AudioVideo;
+StartupWMClass=spotify
+X-GNOME-UsesNotifications=true
+X-Flatpak-Tags=proprietary;
+X-Flatpak=com.spotify.Client

@@ -1,0 +1,192 @@
+#!/usr/bin/env bash
+# rice — save and switch between complete desktop looks ("rices").
+#
+#   rice salvar NOME   save the current look as rice NOME (a git branch
+#                      rice/NOME of ~/Projetos/glasstty; the rice
+#                      called "main" is the main branch)
+#   rice usar NOME     switch to rice NOME and apply it
+#   rice listar        list saved rices (* = in use)
+#   rice atual         print the rice in use
+#   rice tsv           list for the Control Centre (name, in use, saved at)
+#
+# How it works: the shell, niri, kitty and the scripts are symlinks into the
+# glasstty repo, so a git branch IS a whole rice. What lives outside
+# the repo is captured in rice/estado/ inside it when saving, and put back when
+# switching: the wallpaper, the thyx login theme and its wallpaper sync, and the
+# pywal templates (copied, not linked, into ~/.config/wal/templates).
+# The shell's settings (~/.config/quickshell-rice.json, a link into the repo)
+# switch with the branch, including what the Control Centre's Rices page sets
+# per rice: the niri icon theme, folders in the wallpaper's colour and the login
+# layout, which are applied on switching. Monitors, favourites, language and
+# power settings are personal and stay as they are.
+#
+# Switching never loses work: pending changes are first committed to the rice
+# in use ("salvo automaticamente antes de trocar").
+set -euo pipefail
+
+repo="$(command git -C "$(readlink -f "$HOME/.config/quickshell")" rev-parse --show-toplevel 2>/dev/null || true)"
+[ -d "$repo/.git" ] || { echo "rice: repositório não encontrado ($repo)" >&2; exit 1; }
+estado="$repo/rice/estado"
+thyx="${THYX_DIR:-$HOME/Projetos/thyx}"
+say() { printf '\033[1;35m==>\033[0m %s\n' "$*"; }
+git() { command git -C "$repo" "$@"; }
+
+# Rice name <-> branch: "main" is the main branch, every other rice is rice/NAME.
+branch_of() { [ "$1" = main ] && echo main || echo "rice/$1"; }
+name_of() { case "$1" in main) echo main ;; rice/*) echo "${1#rice/}" ;; *) echo "" ;; esac; }
+
+# Commit without a global git identity: the repo's, or the system account's.
+commit() {
+    local name email
+    name="$(git config user.name || getent passwd "$USER" | cut -d: -f5 | cut -d, -f1)"
+    email="$(git config user.email || echo "$USER@$(hostname)")"
+    git -c user.name="$name" -c user.email="$email" commit -q -m "$1"
+}
+
+PESSOAIS_PY='
+import json, os, sys
+# realpath: the file is a link into the repo, and os.replace on the link
+# would turn it into a plain file that no longer switches with the branch.
+f = os.path.realpath(os.path.expanduser("~/.config/quickshell-rice.json"))
+KEYS = ("displays", "favApps", "learnLauncher", "language", "energyOnAC",
+        "energyOnBattery", "batteryAllowIdle", "dimOnSaver", "saverBrightness")
+d = json.load(open(f))
+if sys.argv[1] == "get":
+    print(json.dumps({k: d[k] for k in KEYS if k in d}))
+else:
+    d.update(json.load(sys.stdin))
+    json.dump(d, open(f + ".tmp", "w"), indent=2)
+    os.replace(f + ".tmp", f)
+'
+
+atual() {
+    local b; b="$(git branch --show-current)"
+    local n; n="$(name_of "$b")"
+    [ -n "$n" ] && echo "$n" || echo "(nenhum: branch $b)"
+}
+
+capturar() {   # what lives outside the repo -> rice/estado/
+    mkdir -p "$estado/wal-templates"
+    # Saved relative to the home folder ("~/..."), so the repo carries no
+    # machine-specific path; aplicar expands it back.
+    local w; w="$(cat "$HOME/.cache/pocket-dots/wallpaper" 2>/dev/null)"
+    [ -n "$w" ] && printf '%s\n' "${w/#$HOME/\~}" > "$estado/wallpaper"
+    [ -f "$HOME/.config/pocket-dots/login-sync" ] && echo on > "$estado/login-sync" || echo off > "$estado/login-sync"
+    [ -f "$thyx/theme.conf" ] && cp "$thyx/theme.conf" "$estado/thyx-theme.conf"
+    cp "$HOME/.config/wal/templates/"* "$estado/wal-templates/" 2>/dev/null || true
+}
+
+aplicar() {    # rice/estado/ -> the system, then reload everything
+    if [ -d "$estado/wal-templates" ]; then
+        mkdir -p "$HOME/.config/wal/templates"
+        cp "$estado/wal-templates/"* "$HOME/.config/wal/templates/" 2>/dev/null || true
+    fi
+    [ -f "$estado/thyx-theme.conf" ] && [ -d "$thyx" ] && cp "$estado/thyx-theme.conf" "$thyx/theme.conf"
+    mkdir -p "$HOME/.config/pocket-dots"
+    if [ "$(cat "$estado/login-sync" 2>/dev/null)" = on ]; then
+        touch "$HOME/.config/pocket-dots/login-sync"
+    else
+        rm -f "$HOME/.config/pocket-dots/login-sync"
+        # Fixed preset: put the base theme straight into the login screen.
+        [ -w /usr/share/sddm/themes/thyx/theme.conf ] && [ -f "$thyx/theme.conf" ] \
+            && cp "$thyx/theme.conf" /usr/share/sddm/themes/thyx/theme.conf
+    fi
+    # Login layout (pocket | thyx); the theme folder belongs to the user.
+    local lay; lay="$(python3 -c 'import json,os;print(json.load(open(os.path.expanduser("~/.config/quickshell-rice.json"))).get("loginLayout","pocket"))' 2>/dev/null || echo pocket)"
+    [ -w /usr/share/sddm/themes/thyx/metadata.desktop ] && "$repo/sddm-thyx.sh" layout "$lay" >/dev/null 2>&1 || true
+    niri msg action load-config-file >/dev/null 2>&1 || true
+    # The shell reloads changed files by itself, but after a branch switch a
+    # clean restart is more predictable.
+    pkill -x qs 2>/dev/null || true
+    sleep 0.5
+    niri msg action spawn -- qs --no-duplicate >/dev/null 2>&1 || (setsid qs --no-duplicate >/dev/null 2>&1 &)
+    sleep 2
+    local w; w="$(cat "$estado/wallpaper" 2>/dev/null)"; w="${w/#\~/$HOME}"
+    if [ -f "$w" ]; then
+        "$HOME/.config/glasstty/set-wallpaper.sh" "$w" >/dev/null 2>&1 || true
+    else
+        "$HOME/.config/glasstty/set-wallpaper.sh" --so-cores >/dev/null 2>&1 || true
+    fi
+}
+
+salvar() {
+    local nome="${1:-}"
+    [[ "$nome" =~ ^[a-z0-9][a-z0-9._-]*$ ]] || { echo "rice: nome inválido (use letras minúsculas, números, - _ .)" >&2; exit 1; }
+    capturar
+    if [ "$(git branch --show-current)" != "$(branch_of "$nome")" ]; then
+        if git show-ref --verify --quiet "refs/heads/$(branch_of "$nome")"; then
+            echo "rice: '$nome' já existe. Use 'rice usar $nome' para ir até ele, ou outro nome." >&2
+            exit 1
+        fi
+        git switch -q -c "$(branch_of "$nome")"
+    fi
+    git add -A
+    if git diff --cached --quiet; then
+        say "Rice '$nome' salvo (nada mudou desde o último salvamento)."
+    else
+        commit "rice: $nome"
+        say "Rice '$nome' salvo."
+    fi
+}
+
+usar() {
+    local nome="${1:-}"
+    git show-ref --verify --quiet "refs/heads/$(branch_of "$nome")" || { echo "rice: '$nome' não existe. Veja: rice listar" >&2; exit 1; }
+    if [ "$(git branch --show-current)" = "$(branch_of "$nome")" ]; then
+        say "Já está no rice '$nome'. Reaplicando."
+    else
+        # Never lose work: whatever changed goes into the rice in use first.
+        capturar
+        git add -A
+        if ! git diff --cached --quiet; then
+            local de; de="$(git branch --show-current)"
+            commit "rice: $(name_of "$de") (salvo automaticamente antes de trocar)"
+            say "Mudanças guardadas em '$(name_of "$de")'."
+        fi
+        # The shell's settings file (~/.config/quickshell-rice.json) is part of
+        # the repo, so it switches with the branch. What belongs to you or to
+        # this machine rather than to the look is carried over (PESSOAIS).
+        local pessoal; pessoal="$(python3 -c "$PESSOAIS_PY" get 2>/dev/null || true)"
+        git switch -q "$(branch_of "$nome")"
+        [ -n "$pessoal" ] && printf '%s' "$pessoal" | python3 -c "$PESSOAIS_PY" put 2>/dev/null || true
+    fi
+    say "Aplicando '$nome'…"
+    aplicar
+    say "Rice '$nome' em uso."
+}
+
+listar() {
+    local cur; cur="$(git branch --show-current)"
+    local found=0
+    while IFS= read -r b; do
+        found=1
+        local n; n="$(name_of "$b")"
+        local quando; quando="$(git log -1 --format=%cr "$b")"
+        [ "$b" = "$cur" ] && printf ' * %-20s (em uso · salvo %s)\n' "$n" "$quando" \
+                          || printf '   %-20s (salvo %s)\n' "$n" "$quando"
+    done < <(git for-each-ref --format='%(refname:short)' refs/heads/main 'refs/heads/rice/')
+    [ "$found" = 1 ] || echo "Nenhum rice salvo ainda. Use: rice salvar NOME"
+}
+
+# For the Control Centre: one line per rice, "name<TAB>in-use(0/1)<TAB>saved (unix time)".
+lista_tsv() {
+    local cur; cur="$(git branch --show-current)"
+    git for-each-ref --sort=-committerdate --format='%(refname:short)	%(committerdate:unix)' refs/heads/main 'refs/heads/rice/' |
+    while IFS=$'\t' read -r b quando; do
+        printf '%s\t%s\t%s\n' "$(name_of "$b")" "$([ "$b" = "$cur" ] && echo 1 || echo 0)" "$quando"
+    done
+}
+
+# Everything runs from one line: `rice usar` switches git branches, which
+# rewrites THIS file while bash is still reading it.
+main() {
+    case "${1:-}" in
+        tsv)    lista_tsv ;;
+        salvar) salvar "${2:-}" ;;
+        usar)   usar "${2:-}" ;;
+        listar|"") listar ;;
+        atual)  atual ;;
+        *) sed -n '2,/^[^#]/{/^#/p}' "$0"; exit 1 ;;
+    esac
+}
+main "$@"; exit $?
