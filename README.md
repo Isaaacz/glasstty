@@ -35,7 +35,7 @@ VS Code, the login and the lock screen. No app has to be reopened.
 
 - **Notch shell (Quickshell):** clock, media with a cava visualiser, notifications, OSDs, launcher (`Ctrl+Space`), workspace map.
 - **Control Centre (`Super+D`):** quick toggles, player, calendar, a wallpaper grid, system gauges, manual colours and a page to save and switch whole looks ("rices").
-- **Glass:** every window is slightly translucent with the wallpaper blurred behind it; the terminal and GTK apps use real translucent backgrounds with sharp text. Steam games open maximized and stay fully opaque.
+- **Glass:** every window is slightly translucent with the wallpaper blurred behind it; the terminal and GTK apps use real translucent backgrounds with sharp text. Steam games open fullscreen and stay fully opaque.
 - **Live theming:** pywal palette pushed to GTK 3/4 (incl. libadwaita), Qt, kitty, Spotify (Catppuccin layout via spicetify), VS Code and the folder icons, all without restarting apps.
 - **Login and lock:** SDDM with the [thyx](https://github.com/rccyx/thyx) theme and a matching lock screen, both following the wallpaper.
 - **Rices:** `rice salvar NAME` / `rice usar NAME` store and switch complete looks (shell settings, icons, login layout, wallpaper) as git branches.

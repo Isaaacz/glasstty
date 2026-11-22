@@ -191,14 +191,14 @@ window-rule {
 }
 
 // Games: fully opaque, focused or not, no blur behind them, and opened
-// maximized to the screen edges. Steam games
+// fullscreen, over the bar. Steam games
 // (native or Proton) show up as steam_app_<id>; gamescope wraps others.
 // After the inactive rule so it wins there too.
 window-rule {
     match app-id="^steam_app_"
     match app-id="^gamescope$"
     opacity 1.0
-    open-maximized-to-edges true
+    open-fullscreen true
     background-effect {
         blur false
     }
