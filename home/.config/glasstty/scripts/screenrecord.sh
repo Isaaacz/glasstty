@@ -107,7 +107,9 @@ fi
 # press goes down the stop branch and not this one.
 trap 'rm -f "$lock_file"' EXIT
 
-geom="$(slurp)" || exit 0
+# The capture screen (Screenshot.qml) passes the area it already picked.
+geom="${CAPTURE_GEOM:-}"
+if [ -z "$geom" ]; then geom="$(slurp)" || exit 0; fi
 [ -n "$geom" ] || exit 0
 out="$HOME/Videos/rec-$(date +%Y%m%d_%H%M%S).mp4"
 wf-recorder -g "$geom" "${audio[@]}" -f "$out" >/dev/null 2>&1 &

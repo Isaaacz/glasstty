@@ -342,8 +342,9 @@ binds {
     Mod+Shift+P      allow-inhibiting=false { power-off-monitors; }
 
     // ── screenshots / tools ──
-    Mod+Shift+S      allow-inhibiting=false { spawn-sh "~/.config/glasstty/scripts/screenshot-region.sh"; }
-    Print            { spawn-sh "~/.config/glasstty/scripts/screenshot-full.sh"; }
+    Mod+Shift+S      allow-inhibiting=false hotkey-overlay-title="Capturar tela" { spawn "qs" "ipc" "call" "shot" "open"; }
+    // Print opens the capture screen (Screenshot.qml), GNOME-style; while recording it stops.
+    Print            hotkey-overlay-title="Capturar tela" { spawn "qs" "ipc" "call" "shot" "open"; }
     Mod+Ctrl+S       allow-inhibiting=false { spawn-sh "~/.config/glasstty/scripts/screenshot-annotate.sh"; }
     Mod+Shift+C      allow-inhibiting=false { spawn-sh "~/.config/glasstty/scripts/colorpicker.sh"; }
     Mod+Shift+N      allow-inhibiting=false { spawn-sh "~/.config/glasstty/scripts/night-light.sh"; }

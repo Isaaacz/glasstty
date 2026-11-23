@@ -1629,7 +1629,10 @@ Singleton {
             // bonus, Qt.callLater collapses a burst of sixty into a single
             // pass, and trimNotifs already knows how to remove several at once.
             Qt.callLater(root.trimNotifs);
-            if (!root.dnd) root.flash("notif", root.notifFlashMs(n));
+            // A shell reload hands back the notifications it kept (keepOnReload)
+            // through here again: they go back to the history, but the notch
+            // must not announce them a second time.
+            if (!root.dnd && !n.lastGeneration) root.flash("notif", root.notifFlashMs(n));
         }
     }
 

@@ -78,7 +78,7 @@ Flickable {
         "notch style": "Notch ou ilha", "notch clipboard": "Histórico da área de transferência",
         "notch actions": "Ações rápidas", "notch calendar": "Calendário",
         "notch bright up": "Mais brilho", "notch bright down": "Menos brilho",
-        "wallpaper toggle": "Escolher wallpaper", "media toggle": "Player de música"
+        "wallpaper toggle": "Escolher wallpaper", "media toggle": "Player de música", "shot open": "Capturar tela"
     })
     readonly property var nActions: ({
         "show-hotkey-overlay": "Atalhos do niri", "toggle-overview": "Overview do niri",

@@ -18,4 +18,5 @@ Scope {
     LockScreen {}       // lock screen with the thyx look (same theme as the SDDM login)
     IdleDim {}          // the screen fades to dark before the idle lock
     BatteryWatch {}     // low-battery warnings at 20, 10 and 5 %
+    Screenshot {}       // Print: GNOME-style capture screen
 }

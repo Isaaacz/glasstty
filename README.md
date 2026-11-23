@@ -68,7 +68,7 @@ VS Code, the login and the lock screen. No app has to be reopened.
 | `Super+Shift+Tab` | niri Overview |
 | `Super+1…0` | Workspaces |
 | `Super+L` | Lock |
-| `Super+Shift+S` / `Print` | Screenshot (area / full) |
+| `Super+Shift+S` / `Print` | Capture screen: area, screen or window, photo or video (GNOME-style) |
 | `Super+,` | Shell settings |
 | `Super+K` | Every shortcut, read live from `config.kdl` |
 
