@@ -1,10 +1,21 @@
 #!/usr/bin/env bash
 # install-niri.sh — glasstty on Fedora + niri, next to an untouched GNOME.
 #
-#   ./install-niri.sh                 install everything
-#   ./install-niri.sh --no-packages   skip dnf/pipx (configs only)
-#   ./install-niri.sh --no-fonts      skip the Nerd Font download
-#   ./install-niri.sh --dry-run       print what would be done, change nothing
+#   ./install-niri.sh                    install (asks which optional parts, in a terminal)
+#   ./install-niri.sh --yes              no questions: the defaults below
+#   ./install-niri.sh --with spotify,sddm --without wallpapers
+#   ./install-niri.sh --minimal          the core only, no optional parts
+#   ./install-niri.sh --no-packages      skip dnf/pipx (configs only)
+#   ./install-niri.sh --dry-run          print what would be done, change nothing
+#
+# Optional parts (the core — shell, niri, kitty, fastfetch, scripts — always goes in):
+#   fonts       the Symbols Nerd Font, if no Nerd Font is installed  (default: on)
+#   wallpapers  the five wallpapers into ~/Pictures/wallpapers        (default: on)
+#   spotify     Spotify in the palette (spicetify theme, launcher)    (default: on if Spotify is installed)
+#   vscode      VS Code on Wayland and in the palette                 (default: on if VS Code is installed)
+#   sddm        login screen with the thyx theme; asks for sudo, and only
+#               installs it: switching GDM -> SDDM stays your step      (default: off)
+# (--no-fonts is the same as --without fonts.)
 #
 # What it does:
 #   1. enables the quickshell COPR and installs packages/fedora-niri.txt
@@ -35,16 +46,34 @@ repo="$(cd "$(dirname "$0")" && pwd)"
 stamp="$(date +%Y%m%d-%H%M%S)"
 cfg="$HOME/.config"
 packages=1
-fonts=1
 dry=0
-for a in "$@"; do
-    case "$a" in
+ask=1                       # ask about the optional parts (only in a terminal)
+components="fonts wallpapers spotify vscode sddm"
+declare -A want=()          # component -> 1 / 0, "" = default
+usage() { sed -n '4,24p' "$0" | sed 's/^# \{0,1\}//'; }
+setlist() {   # setlist <0|1> <a,b,c>
+    local v="$1" c
+    for c in ${2//,/ }; do
+        [[ " $components " == *" $c "* ]] || { echo "unknown part: $c (one of: $components)" >&2; exit 1; }
+        want[$c]="$v"
+    done
+    ask=0
+}
+while [ $# -gt 0 ]; do
+    case "$1" in
         --no-packages) packages=0 ;;
-        --no-fonts) fonts=0 ;;
+        --no-fonts) setlist 0 fonts ;;
+        --with) [ -n "${2:-}" ] || { usage >&2; exit 1; }; setlist 1 "$2"; shift ;;
+        --with=*) setlist 1 "${1#*=}" ;;
+        --without) [ -n "${2:-}" ] || { usage >&2; exit 1; }; setlist 0 "$2"; shift ;;
+        --without=*) setlist 0 "${1#*=}" ;;
+        --minimal) for c in $components; do want[$c]=0; done; ask=0 ;;
+        --yes|-y) ask=0 ;;
         --dry-run) dry=1 ;;
-        -h|--help) sed -n '2,7p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
-        *) echo "usage: $0 [--no-packages] [--no-fonts] [--dry-run]" >&2; exit 1 ;;
+        -h|--help) usage; exit 0 ;;
+        *) usage >&2; exit 1 ;;
     esac
+    shift
 done
 
 say()  { printf '\033[1;35m==>\033[0m %s\n' "$*"; }
@@ -55,8 +84,9 @@ last=""
 run() { last="$*"; if [ "$dry" = 1 ]; then printf '    %s\n' "$*"; else "$@"; fi; }
 
 # What happened, for the summary at the end.
-done_=() ; moved=() ; kept=()
+done_=() ; moved=() ; kept=() ; skipped=()
 step="starting"
+log=""
 
 summary() {
     echo
@@ -70,6 +100,11 @@ summary() {
         printf '    left as they were (yours, or already in place):\n'
         printf '      %s\n' "${kept[@]}"
     fi
+    if [ "${#skipped[@]}" -gt 0 ]; then
+        printf '    not installed (optional parts left out):\n'
+        printf '      %s\n' "${skipped[@]}"
+    fi
+    [ -z "$log" ] || printf '    full log: %s\n' "$log"
 }
 # A failure says where it happened and what was already done. Nothing is left
 # half-written: every change is one mv / ln / cp, and a re-run picks up from
@@ -96,10 +131,61 @@ if [ "$packages" = 1 ]; then
     command -v dnf >/dev/null 2>&1 || die "dnf not found: this installs packages for Fedora; use --no-packages elsewhere"
     grep -qi fedora /etc/os-release 2>/dev/null || warn "not Fedora: package names may differ"
 fi
+
+# What the desktop needs at run time (from packages/fedora-niri.txt and pipx).
+runtime="niri qs wal grim slurp magick jq wl-copy swayidle kitty nautilus brightnessctl"
+missing_runtime() { local c m=(); for c in $runtime; do command -v "$c" >/dev/null 2>&1 || m+=("$c"); done; echo "${m[*]:-}"; }
 if [ "$packages" = 0 ]; then
-    missing=()
-    for c in niri qs wal grim slurp magick jq; do command -v "$c" >/dev/null 2>&1 || missing+=("$c"); done
-    [ "${#missing[@]}" -eq 0 ] || warn "not installed yet (needed at runtime): ${missing[*]}"
+    m="$(missing_runtime)"
+    [ -z "$m" ] || warn "not installed (needed at run time): $m — run without --no-packages, or install them"
+fi
+
+# ── the optional parts: defaults, then the questions (or the flags) ──
+has_nerd_font() { fc-list : family 2>/dev/null | grep -i "Nerd Font" >/dev/null; }
+# Looked up by folder, not with `flatpak info`: that creates an empty user
+# Flatpak repo in a HOME that has none (even in --dry-run).
+has_flatpak() { [ -d "$HOME/.local/share/flatpak/app/$1" ] || [ -d "/var/lib/flatpak/app/$1" ]; }
+has_spotify() { has_flatpak com.spotify.Client || [ -x /usr/bin/spotify ]; }
+has_vscode() { [ -x /usr/bin/code ] || has_flatpak com.visualstudio.code; }
+default_of() {
+    case "$1" in
+        fonts) has_nerd_font && echo 0 || echo 1 ;;
+        wallpapers) echo 1 ;;
+        spotify) has_spotify && echo 1 || echo 0 ;;
+        vscode) has_vscode && echo 1 || echo 0 ;;
+        sddm) echo 0 ;;
+    esac
+}
+describe() {
+    case "$1" in
+        fonts) echo "Symbols Nerd Font (the shell's icons)" ;;
+        wallpapers) echo "the five wallpapers, into ~/Pictures/wallpapers" ;;
+        spotify) echo "Spotify in the wallpaper's colours (spicetify)" ;;
+        vscode) echo "VS Code on Wayland, in the wallpaper's colours" ;;
+        sddm) echo "login screen with the thyx theme (sudo; GDM stays the login until you switch)" ;;
+    esac
+}
+if [ "$ask" = 1 ] && [ "$dry" = 0 ] && [ -t 0 ] && [ -t 1 ]; then
+    say "Optional parts (Enter keeps the suggestion in capitals)"
+    for c in $components; do
+        [ -n "${want[$c]:-}" ] && continue
+        d="$(default_of "$c")"
+        if [ "$d" = 1 ]; then hint="Y/n"; else hint="y/N"; fi
+        read -r -p "    $(describe "$c")? [$hint] " reply || reply=""
+        case "${reply,,}" in y|yes|s|sim) want[$c]=1 ;; n|no|nao|não) want[$c]=0 ;; *) want[$c]="$d" ;; esac
+    done
+fi
+for c in $components; do
+    [ -n "${want[$c]:-}" ] || want[$c]="$(default_of "$c")"
+    [ "${want[$c]}" = 1 ] || skipped+=("$c: $(describe "$c")")
+done
+say "parts: core$(for c in $components; do [ "${want[$c]}" = 1 ] && printf ' + %s' "$c"; done)"
+
+# Everything that follows also goes to a log file, for when something fails.
+if [ "$dry" = 0 ]; then
+    mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}/glasstty"
+    log="${XDG_CACHE_HOME:-$HOME/.cache}/glasstty/install-$stamp.log"
+    exec > >(tee -a "$log") 2>&1
 fi
 
 # 1 ── packages ─────────────────────────────────────────────────────────────
@@ -112,6 +198,14 @@ if [ "$packages" = 1 ]; then
 
     say "pywal (pipx)"
     command -v wal >/dev/null 2>&1 || run pipx install pywal16
+    # pipx puts wal in ~/.local/bin, which a fresh account may not have on PATH yet.
+    case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin:$PATH" ;; esac
+
+    if [ "$dry" = 0 ]; then
+        step="checking the packages"
+        m="$(missing_runtime)"
+        [ -z "$m" ] || die "these did not install: $m. Look at the dnf output above (or the log: $log); a mirror hiccup is the usual cause — run ./install-niri.sh again."
+    fi
 fi
 
 # Nerd Font v3 symbols: the shell's icons live in the Material Design range
@@ -119,7 +213,7 @@ fi
 # .conf would also change fallbacks for the GNOME session.
 # Any Nerd Font carries the symbols (JetBrainsMono Nerd Font does too).
 # (grep without -q: with pipefail an early exit would fail fc-list with SIGPIPE.)
-if [ "$fonts" = 1 ] && ! fc-list : family 2>/dev/null | grep -i "Nerd Font" >/dev/null; then
+if [ "${want[fonts]}" = 1 ] && ! has_nerd_font; then
     step="Nerd Font"
     say "Symbols Nerd Font v3.4.0 (github.com/ryanoasis/nerd-fonts)"
     if [ "$dry" = 1 ]; then
@@ -227,32 +321,44 @@ done
 # and Spotify (user Flatpak) with the DevTools port for live recolouring.
 step="launchers"
 say "launchers -> ~/.local/share/applications"
-for d in org.gnome.Settings.desktop pocket-dots-ajustes.desktop com.spotify.Client.desktop; do
+for d in org.gnome.Settings.desktop pocket-dots-ajustes.desktop; do
     copy_keep "$repo/home/.local/share/applications/$d" "$HOME/.local/share/applications"
 done
 # Default apps for the niri session only (folders open in Files).
 copy_keep "$repo/home/.config/niri-mimeapps.list" "$cfg"
 
-# spicetify theme folders (Spotify theming is optional, see docs/DETALHES.md).
-step="spicetify"
-for d in Themes Extensions; do
-    link_keep "$repo/home/.config/spicetify/$d" "$cfg/spicetify/$d"
-done
+# Optional: Spotify (user Flatpak) with the DevTools port for live recolouring,
+# and the spicetify theme folders (see docs/DETALHES.md).
+if [ "${want[spotify]}" = 1 ]; then
+    step="spotify"
+    say "Spotify theming"
+    copy_keep "$repo/home/.local/share/applications/com.spotify.Client.desktop" "$HOME/.local/share/applications"
+    for d in Themes Extensions; do
+        link_keep "$repo/home/.config/spicetify/$d" "$cfg/spicetify/$d"
+    done
+    command -v spicetify >/dev/null 2>&1 || warn "spicetify is not installed: see docs/DETALHES.md (Spotify) to finish"
+fi
 
 step="commands"
 say "commands -> ~/.local/bin"
 for b in "$repo"/home/.local/bin/*; do
+    case "$(basename "$b")" in
+        spotify) [ "${want[spotify]}" = 1 ] || continue ;;   # the Flatpak wrapper
+        code)    [ "${want[vscode]}" = 1 ]  || continue ;;   # VS Code on Wayland
+    esac
     link_keep "$b" "$HOME/.local/bin/$(basename "$b")"
 done
 
 # 3 ── wallpapers and the first palette ─────────────────────────────────────
-step="wallpapers"
-# xdg-user-dir answers $HOME itself when no pictures folder is configured.
-pics="$(xdg-user-dir PICTURES 2>/dev/null || true)"
-{ [ -z "$pics" ] || [ "$pics" = "$HOME" ]; } && pics="$HOME/Pictures"
-pics="$pics/wallpapers"
-say "wallpapers -> $pics"
-for w in "$repo"/home/Pictures/wallpapers/*.jpg; do copy_keep "$w" "$pics"; done
+if [ "${want[wallpapers]}" = 1 ]; then
+    step="wallpapers"
+    # xdg-user-dir answers $HOME itself when no pictures folder is configured.
+    pics="$(xdg-user-dir PICTURES 2>/dev/null || true)"
+    { [ -z "$pics" ] || [ "$pics" = "$HOME" ]; } && pics="$HOME/Pictures"
+    pics="$pics/wallpapers"
+    say "wallpapers -> $pics"
+    for w in "$repo"/home/Pictures/wallpapers/*.jpg; do copy_keep "$w" "$pics"; done
+fi
 
 # So colors-niri.kdl exists on the first niri start.
 step="first palette"
@@ -262,6 +368,22 @@ if command -v wal >/dev/null 2>&1 && [ ! -f "$HOME/.cache/wal/colors.json" ]; th
         run wal -i "$first" -n -q
         say "first palette: $first"
     fi
+fi
+
+# Optional: the SDDM login with the thyx theme (github.com/rccyx/thyx). It is
+# installed and set to follow the wallpaper; the switch from GDM is left to
+# you (./sddm-thyx.sh ativar), since it changes how the machine boots.
+if [ "${want[sddm]}" = 1 ]; then
+    step="sddm"
+    say "login screen: SDDM + thyx (sudo)"
+    thyx="${THYX_DIR:-$HOME/Projetos/thyx}"
+    if [ ! -f "$thyx/metadata.desktop" ]; then
+        run git clone --depth 1 https://github.com/rccyx/thyx.git "$thyx"
+    fi
+    run "$repo/sddm-thyx.sh" instalar
+    run "$repo/sddm-thyx.sh" layout pocket
+    run "$repo/sddm-thyx.sh" sincronizar
+    done_+=("SDDM + thyx (not active yet: run ./sddm-thyx.sh ativar to make it the login)")
 fi
 
 trap - ERR

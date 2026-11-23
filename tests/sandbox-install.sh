@@ -39,10 +39,11 @@ newhome() { export HOME="$root/$1"; mkdir -p "$HOME"; }
 # Everything in HOME (names, types, link targets, file contents) except the
 # wallpapers, which are copied on purpose and left by the uninstaller.
 snap() {
-    (cd "$HOME" && find . -not -path './Pictures*' -printf '%y %p %l\n' | sort
-     find . -not -path './Pictures*' -type f -print0 | sort -z | xargs -0 -r md5sum) | md5sum
+    # (and the install logs, which stay in ~/.cache/glasstty on purpose)
+    (cd "$HOME" && find . -not -path './Pictures*' -not -path './.cache' -not -path './.cache/glasstty*' -printf '%y %p %l\n' | sort
+     find . -not -path './Pictures*' -not -path './.cache/glasstty*' -type f -print0 | sort -z | xargs -0 -r md5sum) | md5sum
 }
-inst()   { "$repo/install-niri.sh" --no-packages --no-fonts "$@" > "$root/out.txt" 2>&1; }
+inst()   { "$repo/install-niri.sh" --no-packages --no-fonts --yes "$@" > "$root/out.txt" 2>&1; }
 uninst() { "$repo/uninstall-niri.sh" "$@" > "$root/out.txt" 2>&1; }
 
 echo "dry-run"
@@ -69,7 +70,26 @@ check "and says so (0 installed)" 'grep -q "installed or updated: 0" "$root/out.
 
 uninst; rc=$?
 check "uninstall exits 0" '[ $rc -eq 0 ]'
-check "uninstall leaves only the wallpapers" '[ -z "$(cd "$HOME" && find . -not -path "./Pictures*" \( -type f -o -type l \))" ]'
+check "uninstall leaves only the wallpapers (and the log)" '[ -z "$(cd "$HOME" && find . -not -path "./Pictures*" -not -path "./.cache/glasstty*" \( -type f -o -type l \))" ]'
+
+echo "parts"
+newhome minimal
+inst --minimal; rc=$?
+check "--minimal exits 0" '[ $rc -eq 0 ]'
+check "--minimal still installs the core" '[ -L "$HOME/.config/quickshell" ]'
+check "--minimal copies no wallpapers" '[ ! -d "$HOME/Pictures/wallpapers" ]'
+check "--minimal adds no Spotify launcher" '[ ! -e "$HOME/.local/share/applications/com.spotify.Client.desktop" ]'
+check "--minimal links no code wrapper" '[ ! -e "$HOME/.local/bin/code" ]'
+check "the summary lists what was left out" 'grep -q "not installed (optional parts left out)" "$root/out.txt"'
+check "a log file is written" 'ls "$HOME"/.cache/glasstty/install-*.log >/dev/null 2>&1'
+newhome withspotify
+inst --with spotify,vscode --without wallpapers; rc=$?
+check "--with/--without exits 0" '[ $rc -eq 0 ]'
+check "--with spotify adds the launcher and the theme" '[ -f "$HOME/.local/share/applications/com.spotify.Client.desktop" ] && [ -L "$HOME/.config/spicetify/Themes" ]'
+check "--with vscode links the code wrapper" '[ -L "$HOME/.local/bin/code" ]'
+check "--without wallpapers copies none" '[ ! -d "$HOME/Pictures/wallpapers" ]'
+inst --with nonsense; rc=$?
+check "an unknown part is refused" '[ $rc -ne 0 ] && grep -q "unknown part" "$root/out.txt"'
 
 echo "your-files"
 newhome yours

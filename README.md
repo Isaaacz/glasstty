@@ -98,8 +98,18 @@ way is moved to `*.bak-<date>`, files you already have (templates, launchers,
 commands) are left alone, and the script ends with a summary of what it did,
 moved and kept. It is safe to run again, and if it stops it says where.
 
+In a terminal it asks which optional parts to add, suggesting what fits your
+machine: **fonts** (Symbols Nerd Font), **wallpapers**, **spotify** (theme via
+spicetify, suggested if Spotify is installed), **vscode** (suggested if VS Code
+is installed) and **sddm** (the thyx login screen; off unless you ask, and it
+only installs it — switching from GDM stays your step). It checks that the
+packages really installed before going on, and keeps a log in
+`~/.cache/glasstty/`.
+
 - `./install-niri.sh --dry-run` shows every step without changing anything.
-- `--no-packages` skips dnf/pipx (configs only); `--no-fonts` skips the Nerd Font download.
+- `--yes` takes the suggestions without asking; `--minimal` installs the core only.
+- `--with spotify,sddm` / `--without wallpapers` pick parts directly.
+- `--no-packages` skips dnf/pipx (configs only).
 - `./uninstall-niri.sh` removes only what is glasstty's (links into the repo,
   unchanged copies, files the shell generated) and puts your backups back;
   a copy you edited is kept. It also takes `--dry-run`.
