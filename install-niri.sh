@@ -117,7 +117,9 @@ fi
 # Nerd Font v3 symbols: the shell's icons live in the Material Design range
 # (U+F0001+). Not packaged in Fedora. Only the TTFs: the bundled fontconfig
 # .conf would also change fallbacks for the GNOME session.
-if [ "$fonts" = 1 ] && ! fc-list 2>/dev/null | grep -q "Symbols Nerd Font"; then
+# Any Nerd Font carries the symbols (JetBrainsMono Nerd Font does too).
+# (grep without -q: with pipefail an early exit would fail fc-list with SIGPIPE.)
+if [ "$fonts" = 1 ] && ! fc-list : family 2>/dev/null | grep -i "Nerd Font" >/dev/null; then
     step="Nerd Font"
     say "Symbols Nerd Font v3.4.0 (github.com/ryanoasis/nerd-fonts)"
     if [ "$dry" = 1 ]; then

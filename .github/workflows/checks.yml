@@ -24,6 +24,9 @@ jobs:
       - name: ShellCheck (errors)
         run: xargs -a /tmp/shell-files -d '\n' shellcheck -S error
 
+      - name: Install and uninstall in a throwaway HOME
+        run: tests/sandbox-install.sh
+
       - name: Python syntax
         run: |
           { git ls-files '*.py'

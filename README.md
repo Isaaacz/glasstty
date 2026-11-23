@@ -103,6 +103,8 @@ moved and kept. It is safe to run again, and if it stops it says where.
 - `./uninstall-niri.sh` removes only what is glasstty's (links into the repo,
   unchanged copies, files the shell generated) and puts your backups back;
   a copy you edited is kept. It also takes `--dry-run`.
+- `tests/verify-install.sh` checks an install without changing anything; see
+  [docs/TESTING.md](docs/TESTING.md) for the test steps.
 
 Optional extras, each documented in [docs/DETALHES.md](docs/DETALHES.md):
 the SDDM/thyx login (`./sddm-thyx.sh`), Spotify theming (spicetify) and

@@ -66,7 +66,8 @@ remove_copy() {   # remove_copy <installed file> <repo file>
 # A generated file: removed only if its first line carries our marker.
 remove_marked() {  # remove_marked <file> <text its first line contains>
     [ -f "$1" ] && [ ! -L "$1" ] || return 0
-    if head -n1 "$1" | grep -qF -- "$2"; then
+    local first; first="$(head -n1 -- "$1")"
+    if [[ "$first" == *"$2"* ]]; then
         run rm -- "$1"; say "removed: $1"; removed=$((removed + 1))
     else
         kept+=("$1 (no glasstty marker)")

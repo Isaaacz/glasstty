@@ -1,0 +1,66 @@
+# Testing glasstty
+
+## Automatic (every push)
+
+`tests/sandbox-install.sh` runs `install-niri.sh` and `uninstall-niri.sh` in a
+throwaway `HOME`, with stand-ins for the commands that would touch the real
+machine. It checks a dry run, a fresh install, a second run, an install over
+your own files and symlinks (and that uninstalling brings them back exactly),
+an edited copy surviving the uninstall, and an install that fails midway. CI
+runs it on every push; run it locally the same way:
+
+```bash
+tests/sandbox-install.sh
+```
+
+## On a real machine
+
+`tests/verify-install.sh` checks an installed system without changing anything:
+the links, the copied files, the programs, the fonts, the niri config, and —
+depending on where you run it — that the shell is up (inside niri) or that
+GNOME is untouched (inside GNOME). Each line is ✓, ! (worth a look) or ✗.
+
+### 1. A clean account (closest to a new Fedora)
+
+A separate user has an empty `HOME`, so nothing of yours is involved.
+
+```bash
+sudo useradd -m glasstest && sudo passwd glasstest
+```
+
+Log out, log in as **glasstest** in GNOME, open a terminal and run:
+
+```bash
+git clone https://github.com/Isaaacz/glasstty.git ~/Projetos/glasstty
+cd ~/Projetos/glasstty
+./install-niri.sh
+tests/verify-install.sh
+```
+
+Then log out, pick **niri** on the login screen, log in as glasstest and run
+`~/Projetos/glasstty/tests/verify-install.sh` again. Go through the desktop:
+`Super+D`, `Super+W` (change the wallpaper), `Super+L`, `Print`,
+`Super+Shift+E`, Settings (`Super+,`).
+
+Back in GNOME, `tests/verify-install.sh` should say GNOME is untouched. To
+finish, try `./uninstall-niri.sh`, then remove the account:
+
+```bash
+sudo userdel -r glasstest
+```
+
+### 2. An account with GNOME already set up
+
+Same as above, but in an account where GNOME has been used and customised (a
+theme, icons, extensions, your own `~/.config/kitty` or `~/.config/fastfetch`).
+Check that:
+
+- the installer's summary lists your files under *moved aside* or *left as they were*;
+- GNOME looks exactly as before (`tests/verify-install.sh` from GNOME);
+- `./uninstall-niri.sh` puts your files back.
+
+### What to report
+
+The output of `./install-niri.sh` (its summary at the end) and of
+`tests/verify-install.sh`, plus anything that looked wrong. Open an issue with
+them.
