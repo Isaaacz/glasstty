@@ -17,7 +17,7 @@ Scope {
     function txt(pt, en, es) {
         return Config.language === "pt" ? pt : Config.language === "en" ? en : es;
     }
-    function warn(level) {
+    function warn(level, pct) {
         const critical = level <= 10;
         const title = critical ? root.txt("Bateria muito fraca", "Battery very low", "Batería muy baja")
                                : root.txt("Bateria fraca", "Battery low", "Batería baja");
@@ -26,7 +26,7 @@ Scope {
             : root.txt("{0}% restantes · conecte o carregador", "{0}% left · plug in the charger", "{0}% restante · conecta el cargador");
         Quickshell.execDetached(["notify-send", "-a", root.txt("Bateria", "Battery", "Batería"),
             "-u", critical ? "critical" : "normal", "-i", critical ? "battery-caution" : "battery-low",
-            title, body.replace("{0}", ShellState.batt)]);
+            title, body.replace("{0}", pct ?? ShellState.batt)]);
     }
     function check() {
         const b = ShellState.batt;
@@ -53,8 +53,8 @@ Scope {
     }
     IpcHandler {
         target: "battery"
-        // For testing: qs ipc call battery test 10
-        function test(level: int): void { root.warn(level); }
+        // For testing: qs ipc call battery test 10 (shows "10%", not the real charge)
+        function test(level: int): void { root.warn(level, level); }
         function status(): string { return "batt=" + ShellState.batt + " ac=" + ShellState.ac + " warned=" + root.warned; }
     }
 }
