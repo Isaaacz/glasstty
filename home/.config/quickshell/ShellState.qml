@@ -976,20 +976,23 @@ Singleton {
     // device, no output, no flash: the key does nothing, which is the truth.
     function stepBrightness(dir) {
         brightProc.command = ["bash", "-c",
-            "brightnessctl -c backlight -m set 5%" + (dir === "down" ? "-" : "+") +
-            " >/dev/null 2>&1; brightnessctl -c backlight -m 2>/dev/null | awk -F, '{gsub(\"%\",\"\",$4); print $4}'"];
+            "brightnessctl -c backlight -m set 5%" + (dir === "down" ? "-" : "+") + " >/dev/null 2>&1; " +
+            // Never all the way down: at 0 the panel goes black and looks off.
+            "p=$(brightnessctl -c backlight -m 2>/dev/null | awk -F, '{gsub(\"%\",\"\",$4); print $4}'); " +
+            "if [ -n \"$p\" ] && [ \"$p\" -lt " + root.brightMin + " ]; then brightnessctl -c backlight -q set " + root.brightMin + "%; p=" + root.brightMin + "; fi; echo \"$p\""];
         brightProc.running = false;
         brightProc.running = true;
     }
-    // 0 is reachable ON PURPOSE (screen fully off): there is no floor at 1, it is
-    // only clamped to the valid range. brightnessctl also reaches 0 on its own
-    // with the keys (5%- stays at raw 0, verified).
+    // A floor, so the lowest brightness is still a lit screen: at 0 the panel's
+    // backlight switches off and the screen looks dead (this fork; the keys,
+    // the Control Centre slider and Settings all stop here).
+    readonly property int brightMin: 1
     function setBrightness(pct) {
         // With no panel there is nothing to move, and without this guard the
         // slider (no longer drawn, but the function is still public) would write
         // to the first LED it found.
         if (root.bright < 0) return;
-        const v = Math.max(0, Math.min(100, Math.round(pct)));
+        const v = Math.max(root.brightMin, Math.min(100, Math.round(pct)));
         Quickshell.execDetached(["brightnessctl", "-c", "backlight", "-q", "set", v + "%"]);
         root.bright = v;
     }

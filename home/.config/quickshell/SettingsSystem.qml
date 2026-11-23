@@ -42,7 +42,7 @@ Flickable {
                 label: I18n.tr("Brillo")
                 hint: I18n.tr("El mismo brillo que las teclas de función, y con el mismo OSD en el notch.")
                 SettingsControls.Slider_ {
-                    value: Math.max(0, ShellState.bright); from: 0; to: 100; suffix: " %"
+                    value: Math.max(ShellState.brightMin, ShellState.bright); from: ShellState.brightMin; to: 100; suffix: " %"
                     onMoved: function (v) { ShellState.setBrightness(v); }
                 }
             }
