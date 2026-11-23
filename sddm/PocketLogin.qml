@@ -23,7 +23,10 @@ Rectangle {
         return (v === undefined || v === "") ? fallback : v;
     }
     readonly property string family: c("Font", "Plus Jakarta Sans")
-    readonly property bool onRight: String(c("FormPosition", "left")) === "right"
+    // "left" | "right" | "center": where your name and the password go.
+    readonly property string side: ["left", "right", "center"].indexOf(String(c("FormPosition", "left"))) >= 0 ? String(c("FormPosition", "left")) : "left"
+    readonly property bool onRight: root.side === "right"
+    readonly property bool centred: root.side === "center"
     readonly property real u: Math.min(width / 1920, height / 1080)   // scale unit
     readonly property color accent: c("LoginButtonBackgroundColor", "#7aa2f7")
     readonly property color ink: c("PasswordFieldTextColor", "#ffffff")
@@ -103,8 +106,11 @@ Rectangle {
 
     // ── clock, top-left ──
     Column {
+        id: clockCol
         x: 104 * root.u
-        y: 72 * root.u
+        // PocketClockY / PocketFormY: % of the screen, written by login-pywal.sh
+        // from the lock screen's settings (absent = these defaults).
+        y: c("PocketClockY", "") !== "" ? root.height * Number(c("PocketClockY", "0")) / 100 : 72 * root.u
         spacing: 10 * root.u
         Text {
             id: clock
@@ -134,14 +140,17 @@ Rectangle {
     Column {
         id: form
         width: 400 * root.u
-        x: root.onRight ? root.width - width - 58 * root.u : 104 * root.u
+        x: root.centred ? (root.width - width) / 2
+         : root.onRight ? root.width - width - 58 * root.u : 104 * root.u
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 150 * root.u
+        // never up into the clock: it stops 40 px under it
+        anchors.bottomMargin: Math.min(c("PocketFormY", "") !== "" ? root.height * Number(c("PocketFormY", "0")) / 100 : 150 * root.u,
+            root.height - (clockCol.y + clockCol.height) - 40 * root.u - height)
         spacing: 20 * root.u
 
         Text {
             width: parent.width
-            horizontalAlignment: root.onRight ? Text.AlignRight : Text.AlignLeft
+            horizontalAlignment: root.centred ? Text.AlignHCenter : root.onRight ? Text.AlignRight : Text.AlignLeft
             text: root.user.real || root.user.name
             color: root.ink
             elide: Text.ElideRight
@@ -174,6 +183,7 @@ Rectangle {
                 anchors.rightMargin: 12 * root.u
                 anchors.verticalCenter: parent.verticalCenter
                 echoMode: TextInput.Password
+                horizontalAlignment: root.centred ? TextInput.AlignHCenter : TextInput.AlignLeft
                 passwordCharacter: "✦"
                 color: root.ink
                 font { family: root.family; pixelSize: 20 * root.u; letterSpacing: 6 * root.u }
@@ -185,7 +195,9 @@ Rectangle {
             }
             Text {
                 anchors.left: parent.left
+                anchors.right: pw.right
                 anchors.verticalCenter: parent.verticalCenter
+                horizontalAlignment: root.centred ? Text.AlignHCenter : Text.AlignLeft
                 visible: pw.text.length === 0
                 text: root.busy ? "ENTRANDO…" : "SENHA"
                 color: c("PlaceholderTextColor", "#888888")
@@ -211,7 +223,7 @@ Rectangle {
 
         Text {
             width: parent.width
-            horizontalAlignment: root.onRight ? Text.AlignRight : Text.AlignLeft
+            horizontalAlignment: root.centred ? Text.AlignHCenter : root.onRight ? Text.AlignRight : Text.AlignLeft
             height: 16 * root.u
             text: root.errorText
             color: "#ff8a80"

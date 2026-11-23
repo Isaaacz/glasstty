@@ -24,14 +24,25 @@ Item {
     signal picked(string id)
 
     Layout.fillWidth: true
-    implicitHeight: root.tabs.length > 1 ? 30 : 0
+    implicitHeight: root.tabs.length > 1 ? 36 : 0
     visible: root.tabs.length > 1
 
-    Row {
+    // One segmented control, like the capture toolbar's photo/video pill.
+    Rectangle {
         anchors.left: parent.left
         anchors.leftMargin: 2
         anchors.verticalCenter: parent.verticalCenter
-        spacing: 4
+        width: tabRow.implicitWidth + 6
+        height: 34
+        radius: 17
+        color: Colors.fill3
+    }
+    Row {
+        id: tabRow
+        anchors.left: parent.left
+        anchors.leftMargin: 5
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: 2
 
         Repeater {
             model: root.tabs
@@ -50,13 +61,13 @@ Item {
                 Keys.onSpacePressed: root.picked(pill.modelData.id)
                 Keys.onReturnPressed: root.picked(pill.modelData.id)
 
-                width: caption.implicitWidth + 24
-                height: 26
+                width: caption.implicitWidth + 26
+                height: 28
                 radius: height / 2
                 color: pill.active ? Colors.accent
-                    : (pillMouse.containsMouse ? Colors.fill2 : Colors.fill3)
-                border.color: pill.active ? Colors.accent : Colors.hairline
-                border.width: activeFocus ? 2 : 1
+                    : (pillMouse.containsMouse ? Colors.fill2 : "transparent")
+                border.color: Colors.accent
+                border.width: activeFocus && !pill.active ? 2 : 0
 
                 Behavior on color { ColorAnimation { duration: Appearance.mQuick } }
                 Behavior on border.color { ColorAnimation { duration: Appearance.mQuick } }

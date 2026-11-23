@@ -174,6 +174,44 @@ Singleton {
     property alias winShadow: opts.winShadow
     property alias animations: opts.animations
     property alias animSpeed: opts.animSpeed            // % of niri's speed: 100 normal, 200 twice as fast
+
+    // ───────── lock screen (Super+L) ─────────
+    // LockScreen.qml reads the thyx theme.conf like the login does; these sit
+    // on top of it. "" / -1 = what the login theme says.
+    property alias lockBg: opts.lockBg                  // "login" | "wallpaper"
+    property alias lockBlur: opts.lockBlur              // 0..100, -1 = the theme's
+    property alias lockDim: opts.lockDim                // 0..80 % extra shade
+    property alias lockClockSize: opts.lockClockSize    // % of the normal size
+    property alias lockClockWeight: opts.lockClockWeight // "light" | "regular" | "bold" | "black"
+    property alias lock12h: opts.lock12h
+    property alias lockSide: opts.lockSide              // "" | "left" | "right"
+    property alias lockAccent: opts.lockAccent          // "login" | "wallpaper"
+    property alias lockShowDate: opts.lockShowDate
+    property alias lockShowName: opts.lockShowName
+    property alias lockShowPower: opts.lockShowPower
+    property alias lockShowMedia: opts.lockShowMedia
+    property alias lockChar: opts.lockChar
+    property alias lockClockPos: opts.lockClockPos      // "left" | "center" | "right"
+    property alias lockClockFont: opts.lockClockFont    // "" = the login theme's
+    property alias lockClockColor: opts.lockClockColor  // "theme" | "accent" | "white"
+    property alias lockSeconds: opts.lockSeconds
+    property alias lockDateFmt: opts.lockDateFmt        // "full" | "short" | "numeric"
+    property alias lockMessage: opts.lockMessage        // free text under the date
+    property alias lockShowBattery: opts.lockShowBattery
+    property alias lockFieldStyle: opts.lockFieldStyle  // "line" | "box"
+    property alias lockShade: opts.lockShade            // the login's dark gradient
+    property alias lockClockY: opts.lockClockY          // % from the top, -1 = the login's
+    property alias lockFormY: opts.lockFormY            // % from the bottom, -1 = the login's
+    property alias lockCard: opts.lockCard              // frosted card behind name + password
+    property alias lockAvatar: opts.lockAvatar          // your picture over the name
+    property alias lockPreset: opts.lockPreset          // last layout preset picked (label only)
+    property alias lockPanel: opts.lockPanel            // one frosted panel around clock + password
+    property alias lockDatePill: opts.lockDatePill      // the date in a capsule
+    // Clock fonts for the lock: installed ones with some character (Qt.fontFamilies
+    // filters out whatever a machine does not have).
+    readonly property var lockFonts: ["Plus Jakarta Sans", "Inter Display", "Montserrat", "Comfortaa",
+        "JetBrains Mono", "Iosevka", "Latin Modern Roman", "C059", "Grape Nuts", "Adwaita Sans"]
+        .filter(f => Qt.fontFamilies().indexOf(f) >= 0)
     property alias motionBlur: opts.motionBlur
     property alias motionBlurSamples: opts.motionBlurSamples
 
@@ -285,6 +323,20 @@ Singleton {
     // Login layout: sddm-thyx.sh lives at the root of the repo this shell is
     // linked from. The theme folder belongs to the user, so no sudo.
     function applyLogin() { root.save(); loginProc.running = false; loginProc.running = true; }
+    // The login's picture follows the lock's blur and darken (login-pywal.sh
+    // reads them from this JSON). Debounced: dragging a slider remakes it once,
+    // after the save has hit the disk. Does nothing unless the login follows
+    // the wallpaper (the script checks its own flag).
+    function applyLoginLook() { root.save(); loginLookDebounce.restart(); }
+    Timer {
+        id: loginLookDebounce
+        interval: 900
+        onTriggered: { loginLookProc.running = false; loginLookProc.running = true; }
+    }
+    Process {
+        id: loginLookProc
+        command: [Quickshell.env("HOME") + "/.config/glasstty/scripts/login-pywal.sh"]
+    }
     Process {
         id: loginProc
         command: ["sh", "-c", 'r="$(readlink -f "$HOME/.config/quickshell")/../../.."; [ -w /usr/share/sddm/themes/thyx/metadata.desktop ] && "$r/sddm-thyx.sh" layout "$1"', "sh", opts.loginLayout]
@@ -304,21 +356,78 @@ Singleton {
     // blur, whose factory value was the one the user had anyway; it showed up
     // when window rounding was added, which does differ. See `windowRounding`.
 
+    // The appearance defaults, in one place: reset() writes them, and Settings'
+    // draft (AppearanceDraft.qml) loads them for a "Restore" you can still discard.
+    function defaults() {
+        return {
+            notchStyle: "notch",
+            islandGap: 4,
+            notchColor: "#000000",
+            bandH: 32,
+            flare: 13,
+            roundMax: 30,
+            idleW: 140,
+            hoverDelay: 240,
+            hoverPreview: true,
+            browserMedia: false,
+            showDate: false,
+            showBattery: false,
+            reserveSpace: true,
+            scrimAlpha: 0.0,
+            sideMargin: 16,
+            showArch: false,
+            showWorkspaces: true,
+            showAppName: false,
+            showTray: false,
+            fontUI: "Adwaita Sans",
+            clockSize: 17,
+            windowRounding: 12,
+            winOpacity: 88,
+            winOpacityInactive: 82,
+            termOpacity: 87,
+            winBlur: true,
+            winGaps: 6,
+            borderWidth: 1,
+            winShadow: true,
+            animations: true,
+            animSpeed: 100,
+            lockBg: "login",
+            lockBlur: -1,
+            lockDim: 0,
+            lockClockSize: 100,
+            lockClockWeight: "black",
+            lock12h: false,
+            lockSide: "",
+            lockAccent: "login",
+            lockShowDate: true,
+            lockShowName: true,
+            lockShowPower: true,
+            lockShowMedia: false,
+            lockChar: "✦",
+            lockClockPos: "left",
+            lockClockFont: "",
+            lockClockColor: "theme",
+            lockSeconds: false,
+            lockDateFmt: "full",
+            lockMessage: "",
+            lockShowBattery: false,
+            lockFieldStyle: "line",
+            lockShade: true,
+            lockClockY: -1,
+            lockFormY: -1,
+            lockCard: false,
+            lockAvatar: false,
+            lockPreset: "glasstty",
+            lockPanel: false,
+            lockDatePill: false,
+            motionBlur: true,
+            motionBlurSamples: 7
+        };
+    }
+
     function reset() {
-        opts.notchStyle = "notch"; opts.islandGap = 4;
-        opts.notchColor = "#000000";
-        opts.bandH = 32; opts.flare = 13; opts.roundMax = 30; opts.idleW = 140;
-        opts.hoverDelay = 240; opts.hoverPreview = true; opts.browserMedia = false;
-        opts.showDate = false; opts.showBattery = false; opts.reserveSpace = true;
-        opts.scrimAlpha = 0.0; opts.sideMargin = 16;
-        opts.showArch = false; opts.showWorkspaces = true;
-        opts.showAppName = false; opts.showTray = false;
-        opts.fontUI = "Adwaita Sans"; opts.clockSize = 17;
-        opts.windowRounding = 12;
-        opts.winOpacity = 88; opts.winOpacityInactive = 82; opts.termOpacity = 87;
-        opts.winBlur = true; opts.winGaps = 6; opts.borderWidth = 1;
-        opts.winShadow = true; opts.animations = true; opts.animSpeed = 100;
-        opts.motionBlur = true; opts.motionBlurSamples = 7;
+        const d = root.defaults();
+        for (const k in d) opts[k] = d[k];
         root.applyEffects();   // this one does not notice by itself: it has to be written for niri
         // favApps and language are NOT touched on purpose: "restore defaults"
         // is for the appearance, and neither the favourites nor the language
@@ -395,6 +504,35 @@ Singleton {
             property bool winShadow: true
             property bool animations: true
             property int animSpeed: 100
+            property string lockBg: "login"
+            property int lockBlur: -1
+            property int lockDim: 0
+            property int lockClockSize: 100
+            property string lockClockWeight: "black"
+            property bool lock12h: false
+            property string lockSide: ""
+            property string lockAccent: "login"
+            property bool lockShowDate: true
+            property bool lockShowName: true
+            property bool lockShowPower: true
+            property bool lockShowMedia: false
+            property string lockChar: "✦"
+            property string lockClockPos: "left"
+            property string lockClockFont: ""
+            property string lockClockColor: "theme"
+            property bool lockSeconds: false
+            property string lockDateFmt: "full"
+            property string lockMessage: ""
+            property bool lockShowBattery: false
+            property string lockFieldStyle: "line"
+            property bool lockShade: true
+            property int lockClockY: -1
+            property int lockFormY: -1
+            property bool lockCard: false
+            property bool lockAvatar: false
+            property string lockPreset: "glasstty"
+            property bool lockPanel: false
+            property bool lockDatePill: false
             property bool motionBlur: true
             property int motionBlurSamples: 7
 

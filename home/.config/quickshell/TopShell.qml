@@ -122,7 +122,8 @@ Scope {
             ShellState.controlPage = Math.max(0, Math.min(4, n));
             if (ShellState.panel !== "control") ShellState.togglePanel("control");
         }
-        function power(): void { ShellState.togglePanel("power"); }
+        // The power menu is now the full-screen ExitScreen.qml.
+        function power(): void { ShellState.closePanel(); Quickshell.execDetached(["qs", "ipc", "call", "exit", "toggle"]); }
         function network(): void { ShellState.togglePanel("network"); }
         function bluetooth(): void { ShellState.togglePanel("bluetooth"); }
         function system(): void { ShellState.togglePanel("system"); }

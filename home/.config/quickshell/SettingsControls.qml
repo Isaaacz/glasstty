@@ -44,32 +44,34 @@ QtObject {
         }
 
         Layout.fillWidth: true
-        Layout.topMargin: 4
-        spacing: 7
+        Layout.topMargin: 8
+        spacing: 9
         visible: card.visibleRows > 0
 
+        // The menus' look (Control Centre, capture toolbar): a quiet caps
+        // caption over a frosted, borderless card.
         Text {
-            Layout.leftMargin: 3
+            Layout.leftMargin: 8
             visible: card.title.length > 0
             text: card.title
-            color: Colors.accentInk
+            color: Colors.label3
             font.family: Appearance.fontUI
             font.pixelSize: Appearance.fsXS
             font.weight: Font.DemiBold
+            font.letterSpacing: 1.1
+            font.capitalization: Font.AllUppercase
         }
 
         Rectangle {
             Layout.fillWidth: true
-            implicitHeight: inner.implicitHeight + 10
-            radius: Appearance.radM
-            color: Colors.surface1
-            border.width: 1
-            border.color: Colors.hairline
+            implicitHeight: inner.implicitHeight + 12
+            radius: Appearance.radL
+            color: Colors.fill3
 
             ColumnLayout {
                 id: inner
-                anchors { fill: parent; topMargin: 5; bottomMargin: 5; leftMargin: 4; rightMargin: 4 }
-                spacing: 0
+                anchors { fill: parent; topMargin: 6; bottomMargin: 6; leftMargin: 6; rightMargin: 6 }
+                spacing: 2
             }
         }
     }
@@ -101,9 +103,9 @@ QtObject {
         // below and the card's border (the "Tamaño de la hora" (clock size)
         // slider ended up struck through by the pills). A control that grows
         // has to push the row, not spill out of it.
-        Layout.preferredHeight: Math.max(42, inner.implicitHeight + 14)
+        Layout.preferredHeight: Math.max(46, inner.implicitHeight + 16)
         visible: r.matches
-        radius: Appearance.radS
+        radius: Appearance.radM
         color: hh.hovered ? Colors.fill2 : "transparent"
         opacity: r.active ? 1 : 0.42
         Behavior on color { ColorAnimation { duration: Appearance.mQuick; easing.type: Easing.OutQuad } }
@@ -122,8 +124,8 @@ QtObject {
 
         RowLayout {
             id: inner
-            anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
-            spacing: 14
+            anchors { fill: parent; leftMargin: 14; rightMargin: 14 }
+            spacing: 16
 
             Text {
                 Layout.fillWidth: true
@@ -132,7 +134,7 @@ QtObject {
                 color: Colors.label
                 elide: Text.ElideRight
                 font.family: Appearance.fontUI
-                font.pixelSize: Appearance.fsS
+                font.pixelSize: Appearance.fsM
             }
         }
     }
@@ -157,29 +159,36 @@ QtObject {
         Component.onCompleted: a._recount()
 
         Layout.fillWidth: true
-        Layout.preferredHeight: 42
+        Layout.preferredHeight: 46
         visible: a.matches
-        radius: Appearance.radS
+        radius: Appearance.radM
         color: aMa.containsMouse ? Colors.fill2 : "transparent"
         Behavior on color { ColorAnimation { duration: Appearance.mQuick; easing.type: Easing.OutQuad } }
 
         RowLayout {
-            anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
+            anchors { fill: parent; leftMargin: 10; rightMargin: 14 }
             spacing: 12
-            Text {
+            Rectangle {
                 visible: a.icon.length > 0
-                text: a.icon
-                color: Colors.label2
-                font.family: Appearance.font
-                font.pixelSize: 14
+                Layout.preferredWidth: 28; Layout.preferredHeight: 28
+                radius: 9
+                color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.16)
+                Text {
+                    anchors.centerIn: parent
+                    text: a.icon
+                    color: Colors.accentInk
+                    font.family: Appearance.font
+                    font.pixelSize: 14
+                }
             }
             Text {
                 Layout.fillWidth: true
+                Layout.leftMargin: a.icon.length > 0 ? 0 : 4
                 text: a.label
                 color: Colors.label
                 elide: Text.ElideRight
                 font.family: Appearance.fontUI
-                font.pixelSize: Appearance.fsS
+                font.pixelSize: Appearance.fsM
             }
             Text {
                 text: a.value
@@ -219,18 +228,19 @@ QtObject {
         property bool live: true                    // false = does not respond (and looks off)
         signal toggled(bool value)
 
-        implicitWidth: 38; implicitHeight: 21
-        radius: 11
+        implicitWidth: 42; implicitHeight: 24
+        radius: 12
         color: sw.checked ? Colors.accent : Colors.fill1
         opacity: sw.live ? 1 : 0.45
         Behavior on color { ColorAnimation { duration: Appearance.mQuick; easing.type: Easing.OutQuad } }
 
         Rectangle {
-            width: 15; height: 15; radius: 8
-            color: "#ffffff"
+            width: 18; height: 18; radius: 9
+            color: sw.checked ? Colors.accentText : Colors.label2
             y: 3
             x: sw.checked ? parent.width - width - 3 : 3
             Behavior on x { NumberAnimation { duration: Appearance.mQuick; easing.type: Easing.OutCubic } }
+            Behavior on color { ColorAnimation { duration: Appearance.mQuick } }
         }
         MouseArea {
             anchors.fill: parent
@@ -267,9 +277,9 @@ QtObject {
         Rectangle {
             id: track
             Layout.fillWidth: true
-            Layout.preferredHeight: 5
+            Layout.preferredHeight: 6
             radius: 3
-            color: Colors.fill3
+            color: Colors.fill1
 
             Rectangle {
                 id: fill
@@ -278,22 +288,35 @@ QtObject {
                 color: Colors.accent
             }
             Rectangle {
-                width: 13; height: 13; radius: 7
-                color: "#ffffff"
+                width: 16; height: 16; radius: 8
+                color: Colors.accentText
+                border.width: 3
+                border.color: Colors.accent
                 x: Math.max(0, Math.min(track.width - width, fill.width - width / 2))
                 anchors.verticalCenter: parent.verticalCenter
-                scale: drag.pressed ? 1.15 : 1
+                scale: drag.pressed ? 1.25 : drag.containsMouse ? 1.12 : 1
                 Behavior on scale { NumberAnimation { duration: Appearance.mQuick; easing.type: Easing.OutCubic } }
             }
             MouseArea {
                 id: drag
+                // A tall grab area (the whole row height) and no stealing: the
+                // page is a Flickable, and a drag that drifted a few pixels up
+                // or down used to be taken over by it and scroll the page
+                // instead of moving the slider.
                 anchors.fill: parent
-                anchors.margins: -9
+                anchors.leftMargin: -9
+                anchors.rightMargin: -9
+                anchors.topMargin: -16
+                anchors.bottomMargin: -16
                 hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
+                preventStealing: true
+                cursorShape: pressed ? Qt.ClosedHandCursor : Qt.PointingHandCursor
                 function emit(x) {
-                    const f = Math.max(0, Math.min(1, (x + 9) / track.width));
-                    sl.moved(sl.from + f * (sl.to - sl.from));
+                    // x is in the grab area, which starts 9 px left of the track.
+                    const raw = sl.from + Math.max(0, Math.min(1, (x - 9) / track.width)) * (sl.to - sl.from);
+                    // Snap to the slider's step, so it lands on the numbers it shows.
+                    const st = sl.stepSize > 0 ? sl.stepSize : Math.pow(10, -sl.decimals);
+                    sl.moved(Math.max(sl.from, Math.min(sl.to, Math.round((raw - sl.from) / st) * st + sl.from)));
                 }
                 onPressed: function (m) { emit(m.x); }
                 onPositionChanged: function (m) { if (pressed) emit(m.x); }
@@ -337,14 +360,61 @@ QtObject {
             }
         }
 
-        Text {
-            Layout.preferredWidth: 44
-            horizontalAlignment: Text.AlignRight
-            text: sl.shown.toFixed(sl.decimals) + sl.suffix
-            color: Colors.label2
-            font.family: Appearance.fontUI
-            font.pixelSize: Appearance.fsXS
-            font.features: ({ "tnum": 1 })
+        // The value: click it to type an exact number (Enter applies, Esc or
+        // clicking away cancels). Out-of-range numbers are clamped.
+        Rectangle {
+            id: valBox
+            property bool editing: false
+            Layout.preferredWidth: 56
+            Layout.preferredHeight: 26
+            radius: 13
+            color: valBox.editing ? Colors.fill1 : valMa.containsMouse ? Colors.fill2 : "transparent"
+            border.width: valBox.editing ? 1 : 0
+            border.color: Colors.accent
+            Behavior on color { ColorAnimation { duration: Appearance.mQuick } }
+            Text {
+                anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
+                visible: !valBox.editing
+                text: sl.shown.toFixed(sl.decimals) + sl.suffix
+                color: valMa.containsMouse ? Colors.label : Colors.label2
+                font.family: Appearance.fontUI
+                font.pixelSize: Appearance.fsXS
+                font.features: ({ "tnum": 1 })
+            }
+            TextInput {
+                id: valIn
+                anchors { left: parent.left; right: parent.right; leftMargin: 8; rightMargin: 8; verticalCenter: parent.verticalCenter }
+                visible: valBox.editing
+                horizontalAlignment: TextInput.AlignRight
+                color: Colors.label
+                selectionColor: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.45)
+                selectByMouse: true
+                font.family: Appearance.fontUI
+                font.pixelSize: Appearance.fsXS
+                font.features: ({ "tnum": 1 })
+                validator: RegularExpressionValidator { regularExpression: /-?[0-9]*[.,]?[0-9]*/ }
+                function commit() {
+                    const v = parseFloat(String(valIn.text).replace(",", "."));
+                    if (!isNaN(v)) sl.moved(Math.max(sl.from, Math.min(sl.to, v)));
+                    valBox.editing = false;
+                }
+                onAccepted: valIn.commit()
+                Keys.onEscapePressed: valBox.editing = false
+                onActiveFocusChanged: if (!activeFocus && valBox.editing) valBox.editing = false
+            }
+            MouseArea {
+                id: valMa
+                anchors.fill: parent
+                visible: !valBox.editing
+                hoverEnabled: true
+                cursorShape: Qt.IBeamCursor
+                onClicked: {
+                    valIn.text = sl.value.toFixed(sl.decimals);
+                    valBox.editing = true;
+                    valIn.forceActiveFocus();
+                    valIn.selectAll();
+                }
+            }
         }
     }
 
@@ -364,20 +434,20 @@ QtObject {
             Rectangle {
                 required property var modelData
                 readonly property bool sel: String(modelData) === ch.current
-                implicitWidth: t.implicitWidth + 20
-                implicitHeight: 26
-                radius: 9
-                color: sel ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.28)
+                implicitWidth: t.implicitWidth + 22
+                implicitHeight: 28
+                radius: 14
+                color: sel ? Colors.accent
                      : cMa.containsMouse ? Colors.fill2 : Colors.fill3
                 Behavior on color { ColorAnimation { duration: Appearance.mQuick; easing.type: Easing.OutQuad } }
                 Text {
                     id: t
                     anchors.centerIn: parent
                     text: modelData
-                    color: parent.sel ? Colors.label : Colors.label2
+                    color: parent.sel ? Colors.accentText : Colors.label2
                     font.family: Appearance.fontUI
                     font.pixelSize: Appearance.fsXS
-                    font.weight: parent.sel ? Font.Medium : Font.Normal
+                    font.weight: parent.sel ? Font.DemiBold : Font.Normal
                 }
                 MouseArea {
                     id: cMa
@@ -390,17 +460,60 @@ QtObject {
         }
     }
 
+    // ─────────── one line of text (Enter or leaving the field saves) ───────────
+    component Text_: Rectangle {
+        id: tf
+        property string text: ""
+        property string placeholder: ""
+        property int maxLength: 80
+        signal edited(string value)
+
+        Layout.preferredWidth: 270
+        implicitHeight: 32
+        radius: 16
+        color: tIn.activeFocus ? Colors.fill1 : Colors.fill3
+        border.width: tIn.activeFocus ? 1 : 0
+        border.color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.5)
+        Behavior on color { ColorAnimation { duration: Appearance.mQuick } }
+
+        TextInput {
+            id: tIn
+            anchors { left: parent.left; right: parent.right; leftMargin: 14; rightMargin: 14; verticalCenter: parent.verticalCenter }
+            text: tf.text
+            maximumLength: tf.maxLength
+            color: Colors.label
+            selectionColor: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.45)
+            selectByMouse: true
+            clip: true
+            font.family: Appearance.fontUI
+            font.pixelSize: Appearance.fsS
+            onAccepted: { tf.edited(tIn.text); tIn.focus = false; }
+            onActiveFocusChanged: if (!activeFocus && tIn.text !== tf.text) tf.edited(tIn.text)
+            Keys.onEscapePressed: { tIn.text = tf.text; tIn.focus = false; }
+        }
+        Text {
+            anchors { left: parent.left; leftMargin: 14; verticalCenter: parent.verticalCenter }
+            visible: tIn.text.length === 0 && !tIn.activeFocus
+            text: tf.placeholder
+            color: Colors.label3
+            font.family: Appearance.fontUI
+            font.pixelSize: Appearance.fsS
+        }
+    }
+
     // ─────────── small button ───────────
     component Btn_: Rectangle {
         id: b
         property string text: ""
         property bool danger: false
+        property bool primary: false                // the accent button (Aplicar)
         signal clicked
 
-        implicitWidth: bt.implicitWidth + 26
-        implicitHeight: 28
-        radius: 9
-        color: bMa.containsMouse
+        implicitWidth: bt.implicitWidth + 28
+        implicitHeight: 30
+        radius: 15
+        color: b.primary ? (bMa.containsMouse ? Qt.lighter(Colors.accent, 1.12) : Colors.accent)
+             : bMa.containsMouse
              ? (b.danger ? Qt.rgba(Colors.crit.r, Colors.crit.g, Colors.crit.b, 0.30) : Colors.fill2)
              : Colors.fill3
         Behavior on color { ColorAnimation { duration: Appearance.mQuick; easing.type: Easing.OutQuad } }
@@ -409,9 +522,10 @@ QtObject {
             id: bt
             anchors.centerIn: parent
             text: b.text
-            color: bMa.containsMouse ? Colors.label : Colors.label2
+            color: b.primary ? Colors.accentText : bMa.containsMouse ? Colors.label : Colors.label2
             font.family: Appearance.fontUI
             font.pixelSize: Appearance.fsXS
+            font.weight: b.primary ? Font.DemiBold : Font.Normal
         }
         MouseArea {
             id: bMa
@@ -457,10 +571,8 @@ QtObject {
 
         Layout.fillWidth: true
         Layout.preferredHeight: 126
-        radius: Appearance.radM
-        color: Colors.surface1
-        border.width: 1
-        border.color: Colors.hairline
+        radius: Appearance.radL
+        color: Colors.fill3
 
         ColumnLayout {
             anchors.centerIn: parent

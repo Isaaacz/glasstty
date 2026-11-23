@@ -52,6 +52,7 @@ if [ -n "$PALETA" ]; then
   PALETA="$(realpath -- "$PALETA")" || exit 1
 else
   PALETA="$IMG"
+  OWN_PALETTE=1      # colours from the wallpaper itself (variants apply)
   # glasstty: the palette comes from a small copy (800 px, cached).
   # pywal works on the full image: a 6000x3200 PNG took 37 s the first time
   # (cached afterwards, hence "sometimes slow"); 800 px gives the same palette
@@ -97,10 +98,23 @@ eleccion=""
 
 # --saturate 0.5: raises the palette's saturation for more vivid colours (0.4 gentle, 0.6 strong, remove it for the original)
 # $PALETA is $IMG unless --paleta-de was passed (pokémon mode).
-if ! wal -i "$PALETA" --saturate 0.5 -n -q -s -t; then
+# The palette chosen for THIS wallpaper in the Control Centre (Cores >
+# Variações; scripts/palette-variants.sh), as a ready pywal theme. The default
+# one, or any failure there, goes the usual way.
+VARIANT_FILE=""
+if [ -n "${OWN_PALETTE:-}" ]; then
+  v="$("$HOME/.config/glasstty/scripts/palette-variants.sh" choice "$IMG" 2>/dev/null)"
+  [ -n "$v" ] && [ "$v" != padrao ] && VARIANT_FILE="$("$HOME/.config/glasstty/scripts/palette-variants.sh" file "$IMG" "$v" 2>/dev/null)"
+fi
+if [ -n "$VARIANT_FILE" ] && [ -f "$VARIANT_FILE" ]; then
+  wal --theme "$VARIANT_FILE" -n -q -s -t || VARIANT_FILE=""
+fi
+if [ -z "$VARIANT_FILE" ] && ! wal -i "$PALETA" --saturate 0.5 -n -q -s -t; then
   notify-send -u critical "$(tr_ "Tema dinámico" "Dynamic theme")" "$(tr_ "Pywal no pudo generar la paleta" "Pywal could not generate the palette")" 2>/dev/null || true
   exit 1
 fi
+# Single colours changed by hand for this wallpaper (Cores > Paleta atual).
+[ -n "${OWN_PALETTE:-}" ] && "$HOME/.config/glasstty/scripts/palette-variants.sh" apply-edits "$IMG" >/dev/null 2>&1
 # glasstty: manual colours from Settings (colorMode "manual") replace
 # the accent/background and pywal regenerates every template with them.
 grep -q '"colorMode": "manual"' "$HOME/.config/quickshell-rice.json" 2>/dev/null \

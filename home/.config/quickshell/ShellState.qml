@@ -2377,7 +2377,7 @@ Singleton {
         case "clip":     root.openLauncher("clip"); return;
         case "wifi":     root.panel = "network"; return;
         case "bt":       root.panel = "bluetooth"; return;
-        case "power":    root.panel = "power"; return;
+        case "power":    root.closePanel(); Quickshell.execDetached(["qs", "ipc", "call", "exit", "open"]); return;
         case "overview": Compositor.refreshToplevels(); root.panel = "overview"; return;
         case "stage":    root.closePanel(); root.toggleStage(); return;
         case "system":   root.panel = "system"; return;

@@ -254,7 +254,7 @@ Item {
                         font.family: Appearance.font; font.pixelSize: 15
                     }
                     MouseArea { id: pwrBtnMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                onClicked: root.powerDrawer = !root.powerDrawer }
+                                onClicked: { ShellState.closePanel(); Quickshell.execDetached(["qs", "ipc", "call", "exit", "open"]); } }
                 }
             }
 
@@ -873,8 +873,18 @@ Item {
             }
 
             // ── 3: cores (same settings as Ajustes > Aparência > Cores) ──
+            // Scrolls inside the page instead of stretching the panel: the variants
+            // below can wrap onto a second row, and a taller page made the
+            // StackLayout (sized by its tallest page) push every page out of the
+            // notch.
+            Flickable {
+                id: coresScroll
+                clip: true
+                contentHeight: coresPage.implicitHeight
+                boundsBehavior: Flickable.StopAtBounds
             ColumnLayout {
                 id: coresPage
+                width: coresScroll.width
                 spacing: 14
                 readonly property bool manual: Config.colorMode === "manual"
 
@@ -920,10 +930,10 @@ Item {
                     Item { Layout.fillWidth: true }
                 }
 
-                // accent
+                // accent (only in Manual: the wallpaper mode picks its colours itself)
                 RowLayout {
                     spacing: 8
-                    opacity: coresPage.manual ? 1 : 0.45
+                    visible: coresPage.manual
                     Text { text: "Destaque"; color: Colors.label2; Layout.preferredWidth: 90
                            font.family: Appearance.fontUI; font.pixelSize: Appearance.fsS; font.weight: Font.DemiBold }
                     Repeater {
@@ -961,10 +971,10 @@ Item {
                     Item { Layout.fillWidth: true }
                 }
 
-                // background
+                // background (only in Manual: the wallpaper mode picks its colours itself)
                 RowLayout {
                     spacing: 8
-                    opacity: coresPage.manual ? 1 : 0.45
+                    visible: coresPage.manual
                     Text { text: "Fundo"; color: Colors.label2; Layout.preferredWidth: 90
                            font.family: Appearance.fontUI; font.pixelSize: Appearance.fsS; font.weight: Font.DemiBold }
                     Repeater {
@@ -987,6 +997,34 @@ Item {
                     color: Colors.label3
                     font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXS; font.weight: Font.DemiBold
                 }
+                // Each cell is one of pywal's colours: click it to open a drawer
+                // underneath and change that colour for this wallpaper
+                // (palette-variants.sh edit; it comes back with the wallpaper).
+                property int editIdx: -1
+                property var edits: ({})
+                readonly property var slots: [
+                    { slot: "background", name: "Fundo" },        { slot: "color0", name: "Fundo 2" },
+                    { slot: "color1", name: "Cor 1" },             { slot: "color2", name: "Cor 2" },
+                    { slot: "color3", name: "Cor 3" },             { slot: "color4", name: "Destaque (cor 4)" },
+                    { slot: "color5", name: "Cor 5" },             { slot: "color6", name: "Cor 6" },
+                    { slot: "color8", name: "Apagado" },           { slot: "foreground", name: "Texto" }
+                ]
+                readonly property var slotColors: [Colors.bg, Colors.bgAlt, Colors.c1, Colors.c2, Colors.c3, Colors.c4,
+                    Colors.c5, Colors.c6, Colors.dim, Colors.fg]
+                function refreshEdits() { if (!editsGet.running) editsGet.running = true; }
+                function editColor(slot, hex) {
+                    editSet.command = [coresPage.scriptPath, "edit", slot, hex];
+                    editSet.running = false;
+                    editSet.running = true;
+                }
+                Process {
+                    id: editsGet
+                    command: [coresPage.scriptPath, "edits"]
+                    stdout: StdioCollector {
+                        onStreamFinished: { try { coresPage.edits = JSON.parse(this.text.trim() || "{}"); } catch (e) { coresPage.edits = {}; } }
+                    }
+                }
+                Process { id: editSet; onExited: coresPage.refreshEdits() }
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 40
@@ -996,21 +1034,224 @@ Item {
                     Row {
                         anchors.fill: parent
                         Repeater {
-                            model: [Colors.bg, Colors.bgAlt, Colors.c1, Colors.c2, Colors.c3, Colors.c4, Colors.c5, Colors.accent, Colors.accent2, Colors.dim, Colors.fg]
-                            Rectangle { required property color modelData; width: parent.width / 11; height: parent.height; color: modelData }
+                            model: coresPage.slots.length
+                            Rectangle {
+                                id: cell
+                                required property int index
+                                width: parent.width / coresPage.slots.length; height: parent.height
+                                color: coresPage.slotColors[cell.index]
+                                // edited by hand: a small dot
+                                Rectangle {
+                                    visible: coresPage.edits[coresPage.slots[cell.index].slot] !== undefined
+                                    width: 6; height: 6; radius: 3
+                                    anchors { right: parent.right; top: parent.top; margins: 5 }
+                                    color: (0.2126 * cell.color.r + 0.7152 * cell.color.g + 0.0722 * cell.color.b) > 0.5 ? "#111111" : "#ffffff"
+                                }
+                                Rectangle {
+                                    anchors.fill: parent
+                                    color: "transparent"
+                                    border.width: coresPage.editIdx === cell.index ? 3 : (cellMa.containsMouse ? 2 : 0)
+                                    border.color: Colors.fg
+                                }
+                                MouseArea {
+                                    id: cellMa
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: coresPage.editIdx = coresPage.editIdx === cell.index ? -1 : cell.index
+                                }
+                            }
                         }
                     }
                 }
+
+                // ── the drawer: change the chosen colour ──
+                Item {
+                    id: drawer
+                    Layout.fillWidth: true
+                    readonly property bool open: coresPage.editIdx >= 0
+                    readonly property var cur: drawer.open ? coresPage.slots[coresPage.editIdx] : null
+                    Layout.preferredHeight: drawer.open ? drawerBody.implicitHeight + 20 : 0
+                    Behavior on Layout.preferredHeight { NumberAnimation { duration: Appearance.mInScale; easing.type: Easing.OutCubic } }
+                    clip: true
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 14
+                        color: Colors.fill3
+                        opacity: drawer.open ? 1 : 0
+                        Behavior on opacity { NumberAnimation { duration: Appearance.mQuick } }
+                        ColumnLayout {
+                            id: drawerBody
+                            anchors { left: parent.left; right: parent.right; top: parent.top; margins: 10 }
+                            spacing: 10
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 10
+                                Rectangle {
+                                    width: 22; height: 22; radius: 11
+                                    color: drawer.open ? coresPage.slotColors[coresPage.editIdx] : "transparent"
+                                    border.width: 1; border.color: Colors.hairline
+                                }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: drawer.cur ? "Trocar: " + drawer.cur.name : ""
+                                    color: Colors.label
+                                    font.family: Appearance.fontUI; font.pixelSize: Appearance.fsS; font.weight: Font.DemiBold
+                                }
+                                Pill {
+                                    visible: drawer.cur !== null && coresPage.edits[drawer.cur.slot] !== undefined
+                                    text: "Original"
+                                    onChosen: coresPage.editColor(drawer.cur.slot, "")
+                                }
+                                Pill { text: "Fechar"; onChosen: coresPage.editIdx = -1 }
+                            }
+                            Flow {
+                                Layout.fillWidth: true
+                                spacing: 8
+                                Repeater {
+                                    // vivid hues, then the darks and greys a background or text needs
+                                    model: ["#ef4444", "#f97316", "#f59e0b", "#eab308", "#84cc16", "#22c55e", "#14b8a6",
+                                            "#06b6d4", "#3b82f6", "#6366f1", "#8b5cf6", "#d946ef", "#ec4899",
+                                            "#0b0b0d", "#16171b", "#1e2128", "#2a2d35", "#6b7280", "#9ca3af", "#d1d5db", "#f3f4f6"]
+                                    Swatch {
+                                        required property string modelData
+                                        swatch: modelData
+                                        selected: drawer.open && String(coresPage.slotColors[coresPage.editIdx]) === modelData
+                                        onChosen: coresPage.editColor(drawer.cur.slot, modelData)
+                                    }
+                                }
+                                Rectangle {
+                                    width: 96; height: 30; radius: 15
+                                    color: Colors.fill2
+                                    border.width: hexEd.activeFocus ? 1 : 0
+                                    border.color: Colors.accent
+                                    TextInput {
+                                        id: hexEd
+                                        anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
+                                        verticalAlignment: TextInput.AlignVCenter
+                                        text: drawer.open ? String(coresPage.slotColors[coresPage.editIdx]) : ""
+                                        color: Colors.label
+                                        font.family: Appearance.font; font.pixelSize: Appearance.fsS
+                                        maximumLength: 7
+                                        onAccepted: if (/^#[0-9a-fA-F]{6}$/.test(text) && drawer.cur) coresPage.editColor(drawer.cur.slot, text.toLowerCase())
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                // ── variations of this wallpaper's palette (scripts/palette-variants.sh) ──
+                // Several palettes from the same picture; the one you pick is saved
+                // for this wallpaper and comes back whenever you set it again.
+                property var variants: []
+                property string choice: "padrao"
+                property string pending: ""
+                readonly property var variantNames: ({
+                    padrao: "Padrão", vibrante: "Vibrante", suave: "Suave", contraste: "Contraste",
+                    centro: "Do centro", cima: "De cima", baixo: "De baixo",
+                    complementar: "Complementar", claro: "Claro"
+                })
+                readonly property string scriptPath: Quickshell.env("HOME") + "/.config/glasstty/scripts/palette-variants.sh"
+                function refreshVariants() { if (!variantGen.running) variantGen.running = true; }
+                onVisibleChanged: if (visible) { if (!coresPage.manual) refreshVariants(); refreshEdits(); } else editIdx = -1
+                Connections {
+                    target: Colors
+                    function onWallpaperChanged() { if (coresPage.visible) { coresPage.refreshVariants(); coresPage.refreshEdits(); } }
+                }
+                Process {
+                    id: variantGen
+                    command: [coresPage.scriptPath, "gen"]
+                    stdout: StdioCollector {
+                        onStreamFinished: {
+                            try {
+                                const d = JSON.parse(this.text.trim().split("\n").pop());
+                                coresPage.variants = d.variants || [];
+                                coresPage.choice = d.choice || "padrao";
+                            } catch (e) { coresPage.variants = []; }
+                            coresPage.pending = "";
+                        }
+                    }
+                }
+                Process { id: variantSet; onExited: coresPage.refreshEdits() }
+
+                Text {
+                    Layout.topMargin: 6
+                    visible: !coresPage.manual
+                    text: "Variações deste wallpaper"
+                    color: Colors.label3
+                    font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXS; font.weight: Font.DemiBold
+                }
+                Text {
+                    visible: !coresPage.manual && coresPage.variants.length === 0
+                    text: variantGen.running ? "Gerando paletas…" : "Não foi possível gerar as variações."
+                    color: Colors.label3
+                    font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXS
+                }
+                Flow {
+                    Layout.fillWidth: true
+                    visible: !coresPage.manual && coresPage.variants.length > 0
+                    spacing: 8
+                    Repeater {
+                        model: coresPage.variants
+                        Rectangle {
+                            id: vt
+                            required property var modelData
+                            readonly property bool sel: (coresPage.pending || coresPage.choice) === vt.modelData.id
+                            width: 112; height: 54
+                            radius: 12
+                            color: vtMa.containsMouse ? Colors.fill2 : Colors.fill3
+                            border.width: vt.sel ? 2 : 0
+                            border.color: Colors.accent
+                            Behavior on color { ColorAnimation { duration: Appearance.mQuick } }
+                            Column {
+                                anchors { fill: parent; margins: 7 }
+                                spacing: 5
+                                Rectangle {
+                                    width: parent.width; height: 22; radius: 6; clip: true
+                                    color: vt.modelData.colors[0]
+                                    Row {
+                                        anchors { fill: parent; leftMargin: 6; rightMargin: 6; topMargin: 5; bottomMargin: 5 }
+                                        spacing: 3
+                                        Repeater {
+                                            model: vt.modelData.colors.slice(1, 7)
+                                            Rectangle { required property var modelData; width: (parent.width - 15) / 6; height: parent.height; radius: 3; color: modelData }
+                                        }
+                                    }
+                                }
+                                Text {
+                                    text: coresPage.variantNames[vt.modelData.id] || vt.modelData.id
+                                    color: vt.sel ? Colors.label : Colors.label2
+                                    font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXS
+                                    font.weight: vt.sel ? Font.DemiBold : Font.Normal
+                                }
+                            }
+                            MouseArea {
+                                id: vtMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    if (vt.sel || variantSet.running) return;
+                                    coresPage.pending = vt.modelData.id;
+                                    coresPage.choice = vt.modelData.id;
+                                    variantSet.command = [coresPage.scriptPath, "set", vt.modelData.id];
+                                    variantSet.running = true;
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Text {
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
                     text: coresPage.manual
                         ? "Manual: o destaque e o fundo escolhidos valem para tudo (barra, janelas, login, terminal, apps) em qualquer wallpaper."
-                        : "Do wallpaper: as cores mudam com cada wallpaper. Escolha uma cor acima para fixar a sua."
+                        : "Do wallpaper: as cores mudam com cada wallpaper. Escolha uma variação acima, ou Manual para fixar as suas."
                     color: Colors.label3
                     font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXS
                 }
-                Item { Layout.fillHeight: true }
+            }
             }
 
             // ── 4: rices (save / switch looks; see RicesPage.qml) ──

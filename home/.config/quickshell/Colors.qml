@@ -20,6 +20,7 @@ Singleton {
     property color c3: "#fabd2f"
     property color c4: "#83a598"
     property color c5: "#d3869b"
+    property color c6: "#8ec07c"     // pywal color6 (Cores > Paleta atual edits it too)
 
     // SEMANTIC colours: fixed on purpose. c1..c5 come from pywal and change with
     // the wallpaper (color2 has no reason to be green), so they are no good for
@@ -387,6 +388,7 @@ Singleton {
             root.c3 = _c(c.color3, root.c3);
             root.c4 = _c(c.color4, root.c4);
             root.c5 = _c(c.color5, root.c5);
+            root.c6 = _c(c.color6, root.c6);
             // Explicit "file://": Image wants it as a URL, and a bare path would
             // be resolved relative to the .qml, not to the root.
             if (j.wallpaper && String(j.wallpaper).length > 0)

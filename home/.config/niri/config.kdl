@@ -122,14 +122,6 @@ spawn-sh-at-startup "python3 ~/.config/quickshell/scripts/bt-agent.py"
 spawn-sh-at-startup "swayidle -w timeout 280 'qs ipc call dim start' resume 'qs ipc call dim stop' timeout 300 '~/.config/quickshell/scripts/lock.sh' timeout 600 'niri msg action power-off-monitors' before-sleep '~/.config/quickshell/scripts/lock.sh' lock '~/.config/quickshell/scripts/lock.sh'"
 
 // ─────────────────────────── window rules ───────────────────────────
-// Settings from the notch: floating, centred, 900x620.
-window-rule {
-    match app-id="^org\\.quickshell$" title="^Ajustes$"
-    open-floating true
-    default-column-width { fixed 900; }
-    default-window-height { fixed 620; }
-}
-
 window-rule {
     match app-id="^imv$"
     open-floating true
@@ -267,7 +259,7 @@ binds {
     // Stage Manager = niri's Overview (no IPC round trip needed).
     Mod+Shift+Tab    allow-inhibiting=false hotkey-overlay-title="Overview (Stage Manager)" { toggle-overview; }
     Mod+Shift+D      allow-inhibiting=false { spawn "qs" "ipc" "call" "notch" "system"; }
-    Mod+Shift+E      allow-inhibiting=false { spawn "qs" "ipc" "call" "notch" "power"; }
+    Mod+Shift+E      allow-inhibiting=false hotkey-overlay-title="Sair / desligar" { spawn "qs" "ipc" "call" "exit" "toggle"; }
     Mod+K            allow-inhibiting=false { spawn "qs" "ipc" "call" "notch" "keys"; }
     Mod+W            allow-inhibiting=false hotkey-overlay-title="Wallpapers" { spawn "qs" "ipc" "call" "wallpaper" "toggle"; }
     Mod+B            allow-inhibiting=false hotkey-overlay-title="Esconder/mostrar barra" { spawn "qs" "ipc" "call" "notch" "bar"; }
@@ -277,7 +269,7 @@ binds {
     Mod+Shift+M      allow-inhibiting=false { spawn "qs" "ipc" "call" "media" "toggle"; }
     Mod+Shift+W      allow-inhibiting=false { spawn "qs" "ipc" "call" "wallpaper" "toggle"; }
     Mod+G            allow-inhibiting=false { spawn-sh "~/.config/quickshell/reload.sh"; }
-    XF86PowerOff     { spawn "qs" "ipc" "call" "notch" "power"; }
+    XF86PowerOff     { spawn "qs" "ipc" "call" "exit" "toggle"; }
 
     // ── apps ──
     Mod+T            allow-inhibiting=false hotkey-overlay-title="Terminal" { spawn "kitty"; }

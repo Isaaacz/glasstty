@@ -26,6 +26,7 @@ import Quickshell
 import Quickshell.Wayland
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Effects
 import QtQuick.Controls
 
 Scope {
@@ -186,7 +187,9 @@ Scope {
         implicitHeight: 620
         minimumSize.width: 780
         minimumSize.height: 500
-        color: "#0b0b0b"
+        // Translucent like the GTK apps on the pywal theme (window_bg 0.80 in
+        // gtk-pywal.sh): niri's glass rule blurs the wallpaper behind it.
+        color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.80)
 
         // On opening: empty search box with focus, and no description inherited
         // from the previous time.
@@ -243,7 +246,7 @@ Scope {
                 Rectangle {
                     Layout.preferredWidth: 224
                     Layout.fillHeight: true
-                    color: "#000000"
+                    color: "transparent"   // same glass as the rest of the window
 
                     ColumnLayout {
                         anchors { fill: parent; topMargin: 22; leftMargin: 14; rightMargin: 14 }
@@ -264,18 +267,16 @@ Scope {
                             Layout.topMargin: 12
                             Layout.bottomMargin: root.searching ? 2 : 9
                             implicitHeight: 38
-                            radius: 12
+                            radius: 19
                             color: search.activeFocus ? Colors.fill1 : Colors.fill3
-                            border.width: 1
-                            border.color: search.activeFocus
-                                ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.42)
-                                : Colors.hairline
+                            border.width: search.activeFocus ? 1 : 0
+                            border.color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.5)
                             Behavior on color { ColorAnimation { duration: Appearance.mQuick; easing.type: Easing.OutQuad } }
                             Behavior on border.color { ColorAnimation { duration: Appearance.mQuick } }
 
                             RowLayout {
-                                anchors { fill: parent; leftMargin: 10; rightMargin: 8 }
-                                spacing: 7
+                                anchors { fill: parent; leftMargin: 14; rightMargin: 12 }
+                                spacing: 8
 
                                 Text {
                                     text: "󰍉"
@@ -378,8 +379,8 @@ Scope {
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 40
                                         visible: !root.searching || navItem.hits > 0
-                                        radius: 12
-                                        color: navItem.sel ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.24)
+                                        radius: 20
+                                        color: navItem.sel ? Colors.fill1
                                              : navMa.containsMouse ? Colors.fill2 : "transparent"
                                         Behavior on color { ColorAnimation { duration: Appearance.mQuick; easing.type: Easing.OutQuad } }
 
@@ -388,17 +389,17 @@ Scope {
                                             spacing: 11
                                             Text {
                                                 text: navItem.modelData.icon
-                                                color: navItem.sel ? Colors.accent : Colors.label2
+                                                color: navItem.sel ? Colors.accentInk : Colors.label3
                                                 font.family: Appearance.font
-                                                font.pixelSize: 14
+                                                font.pixelSize: 15
                                             }
                                             Text {
                                                 Layout.fillWidth: true
                                                 text: navItem.modelData.label
                                                 color: navItem.sel ? Colors.label : Colors.label2
                                                 font.family: Appearance.fontUI
-                                                font.pixelSize: Appearance.fsS
-                                                font.weight: navItem.sel ? Font.Medium : Font.Normal
+                                                font.pixelSize: Appearance.fsM
+                                                font.weight: navItem.sel ? Font.DemiBold : Font.Normal
                                             }
                                             Rectangle {
                                                 visible: root.searching
@@ -471,16 +472,16 @@ Scope {
                             spacing: 13
 
                             Rectangle {
-                                Layout.preferredWidth: 38
-                                Layout.preferredHeight: 38
-                                radius: 12
-                                color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.18)
+                                Layout.preferredWidth: 40
+                                Layout.preferredHeight: 40
+                                radius: 14
+                                color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.16)
                                 Text {
                                     anchors.centerIn: parent
                                     text: root.sectionInfo(root.section).icon
-                                    color: Colors.accent
+                                    color: Colors.accentInk
                                     font.family: Appearance.font
-                                    font.pixelSize: 17
+                                    font.pixelSize: 18
                                 }
                             }
 
@@ -493,7 +494,7 @@ Scope {
                                     color: Colors.label
                                     elide: Text.ElideRight
                                     font.family: Appearance.fontUI
-                                    font.pixelSize: 18
+                                    font.pixelSize: 20
                                     font.weight: Font.DemiBold
                                 }
                                 Text {
@@ -511,6 +512,28 @@ Scope {
                                 }
                             }
 
+                            // Appearance edits a draft (AppearanceDraft.qml): nothing reaches
+                            // the desktop until "Aplicar".
+                            Text {
+                                visible: root.section === "look" && AppearanceDraft.dirty
+                                text: AppearanceDraft.count === 1 ? I18n.tr("1 cambio sin aplicar")
+                                    : I18n.tr("{0} cambios sin aplicar", AppearanceDraft.count)
+                                color: Colors.label3
+                                font.family: Appearance.fontUI
+                                font.pixelSize: Appearance.fsXS
+                            }
+                            SettingsControls.Btn_ {
+                                visible: root.section === "look" && AppearanceDraft.dirty
+                                text: I18n.tr("Descartar")
+                                onClicked: AppearanceDraft.discard()
+                            }
+                            SettingsControls.Btn_ {
+                                visible: root.section === "look" && AppearanceDraft.dirty
+                                primary: true
+                                text: I18n.tr("Aplicar")
+                                onClicked: AppearanceDraft.apply()
+                            }
+
                             // each section's own action (Restablecer, Buscar…)
                             SettingsControls.Btn_ {
                                 readonly property var sec: content.current
@@ -524,8 +547,8 @@ Scope {
                             Rectangle {
                                 Layout.preferredWidth: 32
                                 Layout.preferredHeight: 32
-                                radius: 10
-                                color: closeMa.containsMouse ? Colors.fill2 : Colors.fill3
+                                radius: 16
+                                color: closeMa.containsMouse ? Colors.fill2 : "transparent"
                                 Behavior on color { ColorAnimation { duration: Appearance.mQuick } }
                                 Text {
                                     anchors.centerIn: parent
@@ -547,12 +570,6 @@ Scope {
                         }
                     }
 
-                    Rectangle {
-                        Layout.fillWidth: true
-                        implicitHeight: 1
-                        color: Colors.hairline
-                    }
-
                     SettingsTabs {
                         id: lookTabs
                         Layout.leftMargin: 24
@@ -566,9 +583,55 @@ Scope {
                             { id: "bar", label: I18n.tr("Barra") },
                             { id: "type", label: I18n.tr("Tipografía") },
                             { id: "colors", label: "Cores" },
-                            { id: "effects", label: I18n.tr("Fondo y efectos") }
+                            { id: "effects", label: I18n.tr("Fondo y efectos") },
+                            { id: "lock", label: I18n.tr("Bloqueo") }
                         ]
                         onPicked: function (id) { current = id; look.contentY = 0; }
+                    }
+
+                    // The lock screen preview, pinned above the Lock tab's options so
+                    // it stays in view while they scroll (live feedback for each one).
+                    Item {
+                        id: lockPin
+                        readonly property bool on: root.section === "look" && lookTabs.current === "lock" && !root.searching
+                        Layout.fillWidth: true
+                        Layout.leftMargin: 24
+                        Layout.rightMargin: 24
+                        Layout.topMargin: on ? 12 : 0
+                        Layout.bottomMargin: on ? 4 : 0
+                        Layout.preferredHeight: on ? Math.round(Math.min(width * 9 / 16, Math.max(170, win.height * 0.3))) : 0
+                        visible: on
+                        Item {
+                            id: pinBox
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            height: parent.height
+                            width: Math.min(parent.width, height * 16 / 9)
+                            Item {
+                                anchors.fill: parent
+                                layer.enabled: true
+                                layer.effect: MultiEffect {
+                                    maskEnabled: true
+                                    maskSource: pinMask
+                                    maskThresholdMin: 0.5
+                                    maskSpreadAtMin: 1.0
+                                }
+                                LockFace { anchors.fill: parent; visible: lockPin.on && ShellState.settingsOpen }
+                            }
+                            Rectangle {
+                                id: pinMask
+                                anchors.fill: parent
+                                radius: Appearance.radL
+                                visible: false
+                                layer.enabled: true
+                            }
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: Appearance.radL
+                                color: "transparent"
+                                border.width: 1
+                                border.color: Colors.hairline
+                            }
+                        }
                     }
 
                     // ─────── sections ───────
