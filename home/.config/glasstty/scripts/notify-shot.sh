@@ -25,6 +25,13 @@ img="${1:-}"
 # The body says it can be clicked: otherwise nobody discovers the action is
 # there. The full path does not fit (it splits the notification into three
 # lines), so only the file name.
+# Without satty (not in Fedora: see packages/fedora-niri.txt) there is nothing
+# to edit with: a plain notice, no action promised.
+if ! command -v satty >/dev/null 2>&1; then
+    notify-send -a "$(tr_ Captura Screenshot)" -i "$img" \
+        "$(tr_ 'Captura de pantalla' 'Screenshot')" "$(tr_ 'Copiada al portapapeles' 'Copied to the clipboard')" 2>/dev/null
+    exit 0
+fi
 act=$(timeout 600 notify-send -a "$(tr_ Captura Screenshot)" -i "$img" -A "edit=$(tr_ 'Editar' 'Edit')" \
         "$(tr_ 'Captura de pantalla' 'Screenshot')" "$(tr_ 'Copiada al portapapeles · pulsa para editar' 'Copied to the clipboard · click to edit')" 2>/dev/null) || exit 0
 

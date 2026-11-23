@@ -59,8 +59,10 @@ xwayland-satellite
 kitty
 nautilus
 fastfetch
-satty
-hyprpicker
+# satty (screenshot editor) and hyprpicker (colour picker) are not in
+# Fedora 45: install them yourself if you want them (cargo / COPR). The
+# capture screen does not need them; "Editar" on a screenshot needs satty.
+xdg-user-dirs
 imv
 mpv
 pavucontrol

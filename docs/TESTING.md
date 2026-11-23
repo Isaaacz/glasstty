@@ -13,6 +13,17 @@ runs it on every push; run it locally the same way:
 tests/sandbox-install.sh
 ```
 
+## In a virtual machine (done for v1.1)
+
+The installer was run on a fresh **Fedora 45 Cloud** image under QEMU/KVM
+(2 CPUs, 2 GB): 552 packages, 44 items installed, `tests/verify-install.sh`
+all good, the shell loading with no errors under niri, and an
+uninstall + reinstall afterwards. What it found is fixed: `satty` and
+`hyprpicker` are not in Fedora 45 (they are now optional), and
+`xdg-user-dirs` was missing from the package list. niri cannot draw on QEMU's
+plain VGA (it skips software rendering), so the desktop itself was not seen
+in that VM; a VM with a virgl GPU (virtio-vga-gl) would show it.
+
 ## On a real machine
 
 `tests/verify-install.sh` checks an installed system without changing anything:

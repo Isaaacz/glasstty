@@ -45,7 +45,9 @@ if command -v niri >/dev/null 2>&1; then
 fi
 [ -f "$HOME/.cache/wal/colors.json" ] && ok "a pywal palette exists" || warn "no pywal palette yet (pick a wallpaper with Super+W)"
 
-if [ "${XDG_CURRENT_DESKTOP:-}" = niri ] || [ -n "${NIRI_SOCKET:-}" ]; then
+# Inside niri, or with a niri session of yours running (e.g. checked over SSH).
+if [ "${XDG_CURRENT_DESKTOP:-}" = niri ] || [ -n "${NIRI_SOCKET:-}" ] || pgrep -u "$(id -u)" -x niri >/dev/null; then
+    [ -n "${WAYLAND_DISPLAY:-}" ] || export WAYLAND_DISPLAY="$(cd "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}" 2>/dev/null && ls -1 wayland-[0-9] 2>/dev/null | tail -n1)"
     echo "running session (niri)"
     pgrep -x qs >/dev/null && ok "the shell (quickshell) is running" || no "quickshell is not running"
     [ "$(qs ipc call lock status 2>/dev/null)" = unlocked ] && ok "the lock screen answers" || no "the lock screen does not answer (qs ipc call lock status)"
