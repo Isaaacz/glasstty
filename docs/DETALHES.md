@@ -10,7 +10,7 @@ Um rice para o **niri**.
 ./install-niri.sh
 ```
 
-O script habilita o COPR do Quickshell, instala `packages/fedora-niri.txt` com `dnf` (pede o sudo uma vez) e o pywal com `pipx`, linka `~/.config/quickshell`, `~/.config/niri/config.kdl`, `~/.config/glasstty`, `~/.config/kitty` e `~/.config/fastfetch` para este repo (arquivos seus viram `*.bak-<data>`) e copia os wallpapers para `~/Pictures/wallpapers`. `--dry-run` mostra os passos sem mudar nada; `./uninstall-niri.sh` desfaz tudo e devolve os backups. Para entrar, saia da sessão e escolha **niri** na tela de login.
+O script habilita o COPR do Quickshell, instala `packages/fedora-niri.txt` com `dnf` (pede o sudo uma vez) e o pywal com `pipx`, linka `~/.config/quickshell`, `~/.config/niri/config.kdl`, `~/.config/glasstty`, `~/.config/kitty` e `~/.config/fastfetch` para este repo (arquivos seus viram `*.bak-<data>`) e copia os wallpapers para `~/Pictures/wallpapers`. Nada seu é apagado ou sobrescrito: um arquivo, pasta ou link no caminho vira `*.bak-<data>` (links seus também, com o destino anotado no resumo), e o que você já tem (templates, atalhos de app, comandos) fica como está. No fim aparece um resumo do que foi instalado, movido e mantido; se algo falhar, ele diz onde, e rodar de novo é seguro. `--dry-run` mostra os passos sem mudar nada; `--no-packages` pula o dnf/pipx e `--no-fonts` pula o download da Nerd Font. `./uninstall-niri.sh` remove só o que é do glasstty (links para o repo, cópias ainda idênticas e arquivos gerados pelo shell, reconhecidos pela marca deles) e devolve os backups; uma cópia que você editou fica. Para entrar, saia da sessão e escolha **niri** na tela de login.
 
 Nada é habilitado como serviço `systemd --user`. O GNOME também chega ao `graphical-session.target` e subiria a barra dentro dele. Tudo que é autostart sai do `config.kdl`, que só o niri lê.
 
@@ -37,7 +37,9 @@ A página **Ajustes > Atalhos** (`Super+K`) lê o bloco `binds` do `config.kdl` 
 
 ## Atalhos principais
 
-`Super+D` central de controle · `Super+R` launcher · `Super+,` ajustes · `Super+Tab` mapa de áreas · `Super+Shift+Tab` overview do niri · `Super+Q` kitty · `Super+C` fecha a janela · `Super+V` flutuante · `Super+F` maximiza até as bordas · `Super+Shift+setas` muda a janela de lugar · `Super+Alt+←/→` empilha ou separa janelas · `Super+1..0` áreas de trabalho · `Super+Shift+/` lista de atalhos do niri.
+`Super+D` central de controle · `Ctrl+Space` launcher · `Super+,` ajustes · `Super+K` todos os atalhos · `Super+Tab` mapa de áreas · `Super+Shift+Tab` overview do niri · `Super+T` kitty · `Super+E` arquivos · `Super+W` wallpapers · `Super+C` fecha a janela · `Super+V` flutuante · `Super+F` / `Super+Shift+F` maximiza até as bordas / tela cheia · `Super+J` largura da coluna · `Super+Shift+setas` muda a janela de lugar · `Super+Alt+←/→` empilha ou separa janelas · `Super+1..0` áreas de trabalho · `Super+L` bloqueia · `Super+Shift+E` tela de saída · `Super+Shift+S` / `Print` captura de tela · `Super+Shift+/` lista de atalhos do niri.
+
+A lista completa e sempre atual é a de **Ajustes > Atalhos** (`Super+K`), lida do `config.kdl`; esta e a do README são resumos.
 
 ## Rices: salvar e trocar visuais
 

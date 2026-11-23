@@ -70,6 +70,8 @@ VS Code, the login and the lock screen. No app has to be reopened.
 | `Super+F` / `Super+Shift+F` | Maximise to the edges / fullscreen |
 | `Super+Shift+Tab` | niri Overview |
 | `Super+1…0` | Workspaces |
+| `Super+Tab` | Workspace map |
+| `Super+C` / `Super+V` | Close window / toggle floating |
 | `Super+L` | Lock |
 | `Super+Shift+E` | Exit screen (log out, restart, shut down) |
 | `Super+Shift+S` / `Print` | Capture screen: area, screen or window, photo or video (GNOME-style) |
@@ -88,12 +90,19 @@ cd ~/Projetos/glasstty
 
 The script enables the Quickshell COPR, installs the packages in
 `packages/fedora-niri.txt` (asks for sudo once) and pywal with `pipx`, symlinks
-the configs into `~/.config` (your own files are backed up as `*.bak-<date>`)
-and copies the wallpapers to `~/Pictures/wallpapers`. Log out and pick **niri**
-on the login screen.
+the configs into `~/.config` and copies the wallpapers to `~/Pictures/wallpapers`.
+Log out and pick **niri** on the login screen.
 
-`./install-niri.sh --dry-run` shows every step without changing anything, and
-`./uninstall-niri.sh` undoes it all, putting your backed-up files back.
+Nothing of yours is deleted or overwritten: a file, folder or symlink in the
+way is moved to `*.bak-<date>`, files you already have (templates, launchers,
+commands) are left alone, and the script ends with a summary of what it did,
+moved and kept. It is safe to run again, and if it stops it says where.
+
+- `./install-niri.sh --dry-run` shows every step without changing anything.
+- `--no-packages` skips dnf/pipx (configs only); `--no-fonts` skips the Nerd Font download.
+- `./uninstall-niri.sh` removes only what is glasstty's (links into the repo,
+  unchanged copies, files the shell generated) and puts your backups back;
+  a copy you edited is kept. It also takes `--dry-run`.
 
 Optional extras, each documented in [docs/DETALHES.md](docs/DETALHES.md):
 the SDDM/thyx login (`./sddm-thyx.sh`), Spotify theming (spicetify) and

@@ -971,7 +971,7 @@ Flickable {
                 label: I18n.tr("Cambiar fondo de pantalla")
                 hint: I18n.tr("Abre el selector: tus fondos y búsqueda en la web. Al aplicar uno, pywal retematiza el escritorio entero.")
                 icon: Icons.image
-                value: "Super+Shift+W"
+                value: "Super+W"
                 // This button has already broken TWICE for the same reason —the
                 // text being sent is not the one Hyprland expects— and both
                 // times it failed silently, doing NOTHING when pressed. It is
