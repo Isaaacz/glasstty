@@ -16,4 +16,5 @@ Scope {
     WallpaperPicker {}
     WallpaperFx {}      // wallpaper transitions, drawn here instead of by awww
     LockScreen {}       // lock screen with the thyx look (same theme as the SDDM login)
+    IdleDim {}          // the screen fades to dark before the idle lock
 }
