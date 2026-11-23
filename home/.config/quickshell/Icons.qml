@@ -65,4 +65,5 @@ Singleton {
     readonly property string video: "󰯜"      // md-video_outline U+F0BDC
     readonly property string bellOff: "󰪑"    // md-bell_off_outline U+F0A91
     readonly property string monitor: "󱄄"    // md-monitor_shimmer U+F1104
+    readonly property string gamepad: "󰊴"    // md-gamepad_variant U+F02B4
 }

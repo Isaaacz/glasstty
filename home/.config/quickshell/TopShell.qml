@@ -40,7 +40,10 @@ Scope {
     // frosted top panel. Config.barBlur turns it off. Per screen it is also
     // off while that screen shows an empty workspace (just the desktop), so
     // the wallpaper is seen clean -- see `win.glass`.
-    readonly property bool glassAllowed: Compositor.isNiri && Config.barBlur
+    // Game mode drops it too: games run maximised under the bar (so the fps
+    // stay visible), and real blur behind the bar is redone on every game
+    // frame, which on an iGPU shows up as stutter. The band goes solid.
+    readonly property bool glassAllowed: Compositor.isNiri && Config.barBlur && !ShellState.gameMode
     readonly property color notchSolid: Colors.notchTint(Config.notchColor)
     readonly property int sideMargin: Config.sideMargin
     readonly property int flare: Config.flare           // radius of the inverted top corner
@@ -724,6 +727,24 @@ Scope {
                     // minimise, caffeine, updates, do-not-disturb, tray,
                     // bluetooth, offline, mute) are gone; that state lives in
                     // the Control Centre (Super+D). Click: the system panel.
+                    // Game mode (Control Centre / launcher). With a game running
+                    // under MangoHud: fps, CPU and GPU. Without one, just the
+                    // icon, so the mode is never on without you seeing it.
+                    // Click turns the mode off.
+                    BarItem {
+                        id: gameItem
+                        visible: ShellState.gameMode
+                        readonly property bool low: ShellState.gameRunning && ShellState.gameFps < 30
+                        icon: Icons.gamepad
+                        iconColor: Colors.accent
+                        label: !ShellState.gameRunning ? ""
+                            : ShellState.gameFps + " fps  ·  CPU " + ShellState.gameCpu + "%"
+                              + "  ·  GPU " + ShellState.gameGpu + "%"
+                              + (ShellState.gameCpuTemp > 0 ? "  ·  " + ShellState.gameCpuTemp + "°" : "")
+                        labelColor: gameItem.low ? Colors.crit : Colors.fg
+                        onClicked: ShellState.toggleGameMode()
+                    }
+
                     BarItem {
                         id: battItem
                         visible: ShellState.batt >= 0

@@ -9,6 +9,7 @@ Singleton {
     id: root
     readonly property bool onBattery: UPower.onBattery
     property bool available: false
+    property string backend: ""          // "tlp" | "ppd" | "" (none found)
     property string error: ""
     readonly property bool busy: change.running || probe.running
     readonly property string active: !available ? "" :
@@ -33,9 +34,20 @@ Singleton {
     function apply() {
         if (!Config.loaded || !root.available) return;
         if (root.busy) { settle.restart(); return; }
-        const selected = root.onBattery ? Config.energyOnBattery : Config.energyOnAC;
+        // Game mode forces Performance for as long as it is on; turning it
+        // off lands back on the saved preference for the current power source.
+        const selected = ShellState.gameMode ? "performance"
+            : root.onBattery ? Config.energyOnBattery : Config.energyOnAC;
         if (!root.valid(selected)) return;
         root.error = "";
+        if (root.backend === "ppd") {
+            // power-profiles-daemon / tuned-ppd (Fedora's default): set it over
+            // D-Bus through Quickshell; polkit lets the active session do it.
+            const want = selected === "performance" ? PowerProfile.Performance
+                : selected === "power-saver" ? PowerProfile.PowerSaver : PowerProfile.Balanced;
+            if (PowerProfiles.profile !== want) PowerProfiles.profile = want;
+            return;
+        }
         change.command = ["tlpctl", "set", selected];
         change.running = true;
     }
@@ -65,6 +77,16 @@ Singleton {
         function onDimOnSaverChanged() { desktopUpdate.restart(); }
         function onSaverBrightnessChanged() { desktopUpdate.restart(); }
     }
+    Connections {
+        target: ShellState
+        function onGameModeChanged() { settle.restart(); }
+    }
+    // The D-Bus properties arrive asynchronously: the first probe can run
+    // before the daemon has answered, so look again once it does.
+    Connections {
+        target: PowerProfiles
+        function onHasPerformanceProfileChanged() { root.refresh(); }
+    }
     Timer { id: desktopUpdate; interval: 250; onTriggered: root.syncDesktop() }
     Process {
         id: desktop
@@ -79,7 +101,7 @@ Singleton {
         function status(): string {
             return JSON.stringify({ available: root.available, active: root.active,
                 onBattery: root.onBattery, onAC: Config.energyOnAC,
-                onBatteryProfile: Config.energyOnBattery, error: root.error });
+                onBatteryProfile: Config.energyOnBattery, backend: root.backend, error: root.error });
         }
         function refresh(): void { root.refresh(); }
         function settings(): void { ShellState.openSettingsAt("system"); }
@@ -91,7 +113,13 @@ Singleton {
         stderr: StdioCollector {}
         onExited: function(code) {
             const wasAvailable = root.available;
-            root.available = code === 0 && root.valid(stdout.text.trim());
+            if (code === 0 && root.valid(stdout.text.trim())) root.backend = "tlp";
+            // No TLP: fall back to power-profiles-daemon (tuned-ppd on Fedora).
+            // Without this, a stock Fedora install had the whole energy section
+            // silently doing nothing.
+            else if (PowerProfiles.hasPerformanceProfile) root.backend = "ppd";
+            else root.backend = "";
+            root.available = root.backend.length > 0;
             if (root.available && !wasAvailable) settle.restart();
         }
     }

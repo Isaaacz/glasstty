@@ -154,6 +154,7 @@ Item {
                         QuickToggle { icon: ShellState.btIcon; tip: "Bluetooth"; on: ShellState.btOn; onActivated: ShellState.togglePanel("bluetooth") }
                         QuickToggle { icon: Icons.moon; tip: "Luz noturna"; on: ShellState.nightLight; onActivated: ShellState.toggleNightLight() }
                         QuickToggle { icon: Icons.coffee; tip: "Cafeína"; on: ShellState.caffeine; onActivated: ShellState.caffeine = !ShellState.caffeine }
+                        QuickToggle { icon: Icons.gamepad; tip: "Modo jogo"; on: ShellState.gameMode; onActivated: ShellState.toggleGameMode() }
                     }
 
                     MiniCalendar {
