@@ -204,16 +204,21 @@ ln -sfn "$TEMA" "$TEMAS/pywal-gtk"
 # Open GTK windows in the niri session restyle LIVE: GTK reloads its theme
 # from disk when the gtk-theme setting changes, and the portal relays that
 # change to every app. The niri session pins the theme with GTK_THEME, so the
-# value itself is ignored there: it is flipped to Adwaita for a moment and put
-# back EXACTLY as it was, only as the signal to reload. GNOME's value ends up
-# untouched, and this only runs inside niri (GNOME is not running then).
+# value itself is ignored there: it is flipped to another theme name for a
+# moment and put back EXACTLY as it was, only as the signal to reload. GNOME's
+# value ends up untouched, and this only runs inside niri (GNOME is not running
+# then).
+# The flip goes to Adwaita-dark when the value IS Adwaita (Fedora's default):
+# flipping Adwaita to Adwaita changes nothing and no window repainted. Runs
+# take turns through a lock, so one never reads another's temporary value.
 if [ "$TEMA_ANTES" != "$TEMA" ] && [ -n "${NIRI_SOCKET:-}" ]; then
 	(
+		exec 9>"${XDG_RUNTIME_DIR:-/tmp}/gtk-pywal-flip.lock"
+		flock -w 5 9 || exit 0
 		t=$(env -u DCONF_PROFILE gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null) || exit 0
-		# Already Adwaita: either another run is mid-flip (it will put the real
-		# value back) or that is the real value; either way, do not touch it.
-		[ -n "$t" ] && [ "$t" != "'Adwaita'" ] || exit 0
-		env -u DCONF_PROFILE gsettings set org.gnome.desktop.interface gtk-theme "'Adwaita'" 2>/dev/null
+		[ -n "$t" ] || exit 0
+		if [ "$t" = "'Adwaita'" ]; then other="'Adwaita-dark'"; else other="'Adwaita'"; fi
+		env -u DCONF_PROFILE gsettings set org.gnome.desktop.interface gtk-theme "$other" 2>/dev/null
 		sleep 0.3
 		env -u DCONF_PROFILE gsettings set org.gnome.desktop.interface gtk-theme "$t" 2>/dev/null
 	) >/dev/null 2>&1 &
