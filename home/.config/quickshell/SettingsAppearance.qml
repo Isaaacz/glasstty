@@ -455,9 +455,9 @@ Flickable {
 
         // ─────────────────── compositor effects ───────────────────
         // The only card on the page that does not govern something the shell paints:
-        // this belongs to Hyprland. That is why the setting also goes out to
-        // ~/.config/glasstty/efectos.lua and not only to the JSON the footer announces —
-        // the reason for the two paths is in Config.applyEffects().
+        // this belongs to niri. That is why the settings also go out to
+        // ~/.config/niri/efeitos*.kdl and not only to the JSON the footer announces;
+        // the how is in Config.applyEffects().
         SettingsControls.Card_ {
             id: cFx
             visible: visibleRows > 0 && (root.searching || root.tab === "effects")
@@ -465,10 +465,10 @@ Flickable {
 
             SettingsControls.Row_ {
                 label: I18n.tr("Esquinas de las ventanas")
-                hint: I18n.tr("Cuánto se redondean las esquinas de las ventanas. A 0 salen cuadradas, que es como nació este escritorio: el foco se dice con luz y no con borde. Hyprland no acepta más de 20.")
+                hint: I18n.tr("Cuánto se redondean las esquinas de las ventanas. A 0 salen cuadradas.")
                 SettingsControls.Slider_ {
                     value: Config.windowRounding
-                    from: 0; to: 20
+                    from: 0; to: 24
                     stepSize: 1
                     suffix: " px"
                     onMoved: function (v) { Config.windowRounding = Math.round(v); Config.applyEffects(); }
@@ -476,21 +476,84 @@ Flickable {
             }
 
             SettingsControls.Row_ {
-                label: I18n.tr("Desenfoque de movimiento")
-                hint: I18n.tr("La ventana se desenfoca hacia donde va, mientras dura la animación. Solo en las transiciones: arrastrar con el ratón ya va 1:1 con tu mano y no deja estela. Si la batería aprieta, este es el primero que apagar.")
-                SettingsControls.Switch_ {
-                    checked: Config.motionBlur
-                    onToggled: function (v) { Config.motionBlur = v; Config.applyEffects(); }
+                label: I18n.tr("Transparencia de las ventanas")
+                hint: I18n.tr("Cuánto se ve el fondo a través de la ventana con el foco. Al 100 % son opacas.")
+                SettingsControls.Slider_ {
+                    value: Config.winOpacity; from: 50; to: 100; stepSize: 1; suffix: " %"
+                    onMoved: function (v) { Config.winOpacity = Math.round(v); Config.applyEffects(); }
                 }
             }
 
             SettingsControls.Row_ {
-                shown: Config.motionBlur
-                label: I18n.tr("Muestras")
-                hint: I18n.tr("Cuántas copias de la ventana se promedian a lo largo del recorrido. Más muestras, estela más suave y más cara de pintar. No alarga la estela: eso lo decide cuánto se ha movido la ventana.")
+                label: I18n.tr("Ventanas sin foco")
+                hint: I18n.tr("Las ventanas que no están en uso, un paso más transparentes. Igual a la de arriba para no distinguirlas.")
                 SettingsControls.Slider_ {
-                    value: Config.motionBlurSamples; from: 2; to: 24
-                    onMoved: function (v) { Config.motionBlurSamples = Math.round(v); Config.applyEffects(); }
+                    value: Config.winOpacityInactive; from: 50; to: 100; stepSize: 1; suffix: " %"
+                    onMoved: function (v) { Config.winOpacityInactive = Math.round(v); Config.applyEffects(); }
+                }
+            }
+
+            SettingsControls.Row_ {
+                label: I18n.tr("Terminal")
+                hint: I18n.tr("La terminal tiene su propia transparencia, con o sin foco.")
+                SettingsControls.Slider_ {
+                    value: Config.termOpacity; from: 50; to: 100; stepSize: 1; suffix: " %"
+                    onMoved: function (v) { Config.termOpacity = Math.round(v); Config.applyEffects(); }
+                }
+            }
+
+            SettingsControls.Row_ {
+                label: I18n.tr("Vidrio esmerilado")
+                hint: I18n.tr("Desenfoca lo que hay detrás de las ventanas transparentes. Apagado se ve el fondo nítido y gasta menos.")
+                SettingsControls.Switch_ {
+                    checked: Config.winBlur
+                    onToggled: function (v) { Config.winBlur = v; Config.applyEffects(); }
+                }
+            }
+
+            SettingsControls.Row_ {
+                label: I18n.tr("Espacio entre ventanas")
+                hint: I18n.tr("El hueco entre ventanas y hasta el borde de la pantalla.")
+                SettingsControls.Slider_ {
+                    value: Config.winGaps; from: 0; to: 32; stepSize: 1; suffix: " px"
+                    onMoved: function (v) { Config.winGaps = Math.round(v); Config.applyEffects(); }
+                }
+            }
+
+            SettingsControls.Row_ {
+                label: I18n.tr("Borde")
+                hint: I18n.tr("El grosor del borde con los colores del fondo. A 0 no hay borde.")
+                SettingsControls.Slider_ {
+                    value: Config.borderWidth; from: 0; to: 6; stepSize: 1; suffix: " px"
+                    onMoved: function (v) { Config.borderWidth = Math.round(v); Config.applyEffects(); }
+                }
+            }
+
+            SettingsControls.Row_ {
+                label: I18n.tr("Sombra")
+                hint: I18n.tr("Una sombra suave bajo la ventana con el foco.")
+                SettingsControls.Switch_ {
+                    checked: Config.winShadow
+                    onToggled: function (v) { Config.winShadow = v; Config.applyEffects(); }
+                }
+            }
+
+            SettingsControls.Row_ {
+                label: I18n.tr("Animaciones")
+                hint: I18n.tr("Ventanas, áreas de trabajo y la vista general se mueven en vez de saltar.")
+                SettingsControls.Switch_ {
+                    checked: Config.animations
+                    onToggled: function (v) { Config.animations = v; Config.applyEffects(); }
+                }
+            }
+
+            SettingsControls.Row_ {
+                shown: Config.animations
+                label: I18n.tr("Velocidad de las animaciones")
+                hint: I18n.tr("100 % es la velocidad normal; más es más rápido.")
+                SettingsControls.Slider_ {
+                    value: Config.animSpeed; from: 50; to: 200; stepSize: 10; suffix: " %"
+                    onMoved: function (v) { Config.animSpeed = Math.round(v); Config.applyEffects(); }
                 }
             }
         }

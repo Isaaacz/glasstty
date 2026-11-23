@@ -9,7 +9,9 @@
 //
 // Two optional includes at the end carry what the shell writes at runtime:
 //   ~/.cache/wal/colors-niri.kdl   border colours from pywal (wal template)
-//   ~/.config/niri/efeitos.kdl     window rounding from Settings > Appearance
+//   ~/.config/niri/efeitos.kdl     rounding, gaps, border, shadow, animations
+//                                  from Settings > Appearance > Effects
+// and three more efeitos-*.kdl in the middle, for the window transparency.
 
 input {
     keyboard {
@@ -160,22 +162,6 @@ window-rule {
     }
 }
 
-// Every window is slightly see-through, focused or not (this fork). Most apps
-// (browsers, Electron like VS Code and Spotify) paint an opaque window, so niri
-// fades the whole window, text included, and the blur rule above frosts what
-// is behind it so it stays readable. Apps that already have a translucent
-// BACKGROUND with opaque text are left at full opacity, or they would fade
-// twice: kitty (background_opacity) and the GNOME apps on the pywal theme.
-window-rule {
-    opacity 0.88
-}
-
-window-rule {
-    match app-id="^org\\.gnome\\."
-    match app-id="^org\\.quickshell$"
-    opacity 1.0
-}
-
 window-rule {
     match app-id="^com\\.microsoft\\.VSCode$"
     match app-id="^code$"
@@ -185,11 +171,32 @@ window-rule {
     }
 }
 
+// Every window is slightly see-through, focused or not (this fork). Most apps
+// (browsers, Electron like VS Code and Spotify) paint an opaque window, so niri
+// fades the whole window, text included, and the blur rule above frosts what
+// is behind it so it stays readable. Apps that already have a translucent
+// BACKGROUND with opaque text are left at full opacity, or they would fade
+// twice: kitty (background_opacity) and the GNOME apps on the pywal theme.
+window-rule {
+    opacity 0.88
+}
+// Settings > Appearance > Effects: window transparency and the blur on/off
+// (the global rule above, kitty and VS Code). Each `efeitos-*.kdl` sits right
+// after the defaults it overrides, so the order of the rules is kept.
+include optional=true "efeitos-janelas.kdl"
+
+window-rule {
+    match app-id="^org\\.gnome\\."
+    match app-id="^org\\.quickshell$"
+    opacity 1.0
+}
+
 // Hyprland's dim_inactive: unfocused windows a step more transparent.
 window-rule {
     match is-active=false
     opacity 0.82
 }
+include optional=true "efeitos-inativas.kdl"
 
 // Games: fully opaque, focused or not, no blur behind them, and opened
 // fullscreen, over the bar. Steam games
@@ -211,6 +218,7 @@ window-rule {
     match app-id="^kitty$"
     opacity 0.87
 }
+include optional=true "efeitos-terminal.kdl"
 
 // Wallpaper surfaces stay put under the Overview (it zooms the workspaces).
 layer-rule {
