@@ -20,9 +20,14 @@ The installer was run on a fresh **Fedora 45 Cloud** image under QEMU/KVM
 all good, the shell loading with no errors under niri, and an
 uninstall + reinstall afterwards. What it found is fixed: `satty` and
 `hyprpicker` are not in Fedora 45 (they are now optional), and
-`xdg-user-dirs` was missing from the package list. niri cannot draw on QEMU's
-plain VGA (it skips software rendering), so the desktop itself was not seen
-in that VM; a VM with a virgl GPU (virtio-vga-gl) would show it.
+`xdg-user-dirs` was missing from the package list.
+
+With a virgl GPU (`-device virtio-vga-gl -display egl-headless`; niri skips
+software rendering, so plain VGA shows nothing) the desktop was checked too:
+bar and notch, kitty with the glass, the Control Centre, Settings, the exit
+screen, the capture screen, a wallpaper change (the whole palette followed in
+under 5 s) and the lock screen. One more fix came out of it: without the
+SDDM/thyx login theme the lock screen was black; it now uses the wallpaper.
 
 ## On a real machine
 

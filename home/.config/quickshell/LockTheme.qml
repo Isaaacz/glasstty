@@ -52,12 +52,23 @@ Singleton {
     }
     // Settings > Appearance > Lock screen can swap the login's background for
     // the current wallpaper (pywal writes its path to ~/.cache/wal/wal).
-    property string wallPath: ""
+    // The ORIGINAL picture (set-wallpaper.sh notes it in pocket-dots/wallpaper);
+    // pywal's own note can be the small copy it took the colours from, which
+    // looks soft at low blur.
+    property string walNote: ""
+    property string origNote: ""
+    readonly property string wallPath: root.origNote !== "" ? root.origNote : root.walNote
     FileView {
         path: root.home + "/.cache/wal/wal"
         watchChanges: true
         onFileChanged: reload()
-        onLoaded: root.wallPath = text().trim()
+        onLoaded: root.walNote = text().trim()
+    }
+    FileView {
+        path: root.home + "/.cache/pocket-dots/wallpaper"
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: root.origNote = text().trim()
     }
     readonly property string themeBg: root.c("Background", "") === "" ? "" : root.themeDir + "/" + root.c("Background", "")
     // When the login follows the wallpaper (login-pywal.sh), its background is a
@@ -67,8 +78,8 @@ Singleton {
     // it is, 100 % the most. defaultBlur is what matches the login's look.
     readonly property bool loginSynced: /pocket-wallpaper\.jpg$/.test(root.themeBg)
     readonly property bool useWall: root.wallPath !== ""
-        && (Config.lockBg === "wallpaper" || root.loginSynced)
-    readonly property int defaultBlur: root.loginSynced ? 80
+        && (Config.lockBg === "wallpaper" || root.loginSynced || root.themeBg === "")
+    readonly property int defaultBlur: (root.loginSynced || root.themeBg === "") ? 80
         : Math.round(100 * Math.max(0, Math.min(1, Number(root.c("Blur", 0.4)))))
     readonly property string bgPath: root.useWall ? root.wallPath : root.themeBg
     readonly property bool bgIsVideo: /\.(mp4|webm|mkv|mov|m4v|avi)$/i.test(root.bgPath)
@@ -82,7 +93,9 @@ Singleton {
     // The picture for a given "Fundo" choice (the real lock uses Config's, the
     // Settings preview the draft's).
     function bgFor(choice) {
-        const wall = root.wallPath !== "" && (choice === "wallpaper" || root.loginSynced);
+        // No login theme installed (no SDDM/thyx, or no picture in it): the
+        // wallpaper, rather than a black screen.
+        const wall = root.wallPath !== "" && (choice === "wallpaper" || root.loginSynced || root.themeBg === "");
         return wall ? root.wallPath : root.themeBg;
     }
 }
