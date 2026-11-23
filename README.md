@@ -4,7 +4,13 @@
 
 **A glassy, wallpaper-driven desktop for [niri](https://github.com/YaLTeR/niri) on Fedora.**
 
-Quickshell notch · pywal colours everywhere · translucent windows
+Quickshell notch · pywal colours everywhere · translucent windows · a lock screen you can shape
+
+glasstty turns niri into a complete desktop: a notch that opens into a
+Control Centre, windows of frosted glass, and one palette — taken from your
+wallpaper — on everything from the terminal to the folder icons, the login
+and the lock screen. It installs next to GNOME without touching it, and
+everything is set from its own Settings window, with live previews.
 
 [![checks](https://github.com/Isaaacz/glasstty/actions/workflows/checks.yml/badge.svg)](https://github.com/Isaaacz/glasstty/actions/workflows/checks.yml)
 
@@ -41,6 +47,8 @@ VS Code, the login and the lock screen. No app has to be reopened.
 - **Login and lock:** SDDM with the [thyx](https://github.com/rccyx/thyx) theme and a matching lock screen, both following the wallpaper. Twelve layout styles (some inspired by [qylock](https://github.com/Darkkal44/qylock)) and options for the clock, password, blur and more, with a live preview; blur, side, height and clock format reach the login too. When idle, the screen fades to dark for 20 s before it locks. Low battery warns at 20, 10 and 5 %.
 - **Settings:** window effects (transparency, blur, gaps, border, shadow, animations), notch, bar and lock screen. Appearance changes show live and are kept with *Apply*, or undone with *Discard*.
 - **Exit screen (`Super+Shift+E`):** a full-screen, blurred goodbye with lock, suspend, log out, restart and shut down.
+- **Capture (`Print`, `Super+Shift+S`):** a GNOME-style capture screen — area, screen or window, photo or video.
+- **Game mode:** FPS, CPU and GPU in the bar while you play (MangoHud), the performance profile, and no glass behind games.
 - **Rices:** `rice salvar NAME` / `rice usar NAME` store and switch complete looks (shell settings, icons, login layout, wallpaper) as git branches.
 - **GNOME stays untouched:** everything is scoped to the niri session; GNOME keeps its own theme and settings.
 
@@ -51,7 +59,26 @@ VS Code, the login and the lock screen. No app has to be reopened.
   </tr>
   <tr>
     <td><img src="docs/assets/stacking.webp" alt="Stacked windows"></td>
-    <td><img src="docs/assets/lock.webp" alt="Lock screen"></td>
+    <td><img src="docs/assets/palettes.webp" alt="Palette variations for one wallpaper"></td>
+  </tr>
+</table>
+
+### The lock screen
+
+Twelve layouts to start from — some in the spirit of [qylock](https://github.com/Darkkal44/qylock)'s
+themes — and every piece adjustable: background and blur, the clock (position,
+height, size, weight, font, colour, seconds, date), the password (side, height,
+line or glass box, card, your photo), a message of your own, music and battery.
+A preview stays pinned while you change things.
+
+<div align="center">
+<img src="docs/assets/lock-styles.webp" alt="Six of the lock screen styles" width="100%">
+</div>
+
+<table>
+  <tr>
+    <td width="45%"><img src="docs/assets/settings-lock.webp" alt="Settings, Lock tab, with the style drawer open"></td>
+    <td><img src="docs/assets/exit.webp" alt="Exit screen"><br><img src="docs/assets/capture.webp" alt="Capture screen"></td>
   </tr>
 </table>
 
@@ -77,6 +104,15 @@ VS Code, the login and the lock screen. No app has to be reopened.
 | `Super+Shift+S` / `Print` | Capture screen: area, screen or window, photo or video (GNOME-style) |
 | `Super+,` | Shell settings |
 | `Super+K` | Every shortcut, read live from `config.kdl` |
+
+## Requirements
+
+- **Fedora 45** (the installer uses dnf; the configs work elsewhere with `--no-packages`, untested).
+- **niri 26.04** and **Quickshell 0.3** (the installer gets both; Quickshell from the `errornointernet/quickshell` COPR).
+- **A GPU with OpenGL**: niri does not run on software rendering. In a virtual
+  machine that means a virgl GPU (`virtio-vga-gl`), not plain VGA.
+- About **400 MB of RAM** for the shell and niri together.
+- GNOME can stay installed: niri becomes one more session on the login screen.
 
 ## Install
 
@@ -120,6 +156,20 @@ Optional extras, each documented in [docs/DETALHES.md](docs/DETALHES.md):
 the SDDM/thyx login (`./sddm-thyx.sh`), Spotify theming (spicetify) and
 VS Code theming.
 
+## Known limitations
+
+- Only tested on **Fedora 45**; other distributions need their own packages.
+- `satty` (editing a screenshot from its notification) and `hyprpicker` are
+  not in Fedora 45: install them yourself if you want them. The capture
+  screen works without either.
+- The lock screen's card, photo, fonts and colours apply to the lock screen
+  only; the login (SDDM/thyx) follows the blur, darkening, password side,
+  heights and clock format.
+- Spotify theming needs the Spotify **Flatpak installed for your user** and
+  [spicetify](https://spicetify.app) (see [docs/DETALHES.md](docs/DETALHES.md)).
+- The installer has not been tried on an account with a heavily customised
+  GNOME yet ([docs/TESTING.md](docs/TESTING.md) has the steps).
+
 ## Credits
 
 glasstty started as a niri port of [pocket-dots](https://github.com/diegoMalagrida/pocket-dots)
@@ -127,3 +177,4 @@ by Diego Malagrida, and much of the shell and scripts still comes from it, so
 the project keeps its licence: **GPL-3.0** (see [LICENSE](LICENSE)).
 Spotify theme: [Catppuccin for spicetify](https://github.com/catppuccin/spicetify) (MIT).
 Login theme: [thyx](https://github.com/rccyx/thyx) (MIT).
+Lock screen layouts partly inspired by [qylock](https://github.com/Darkkal44/qylock) (GPL-3.0); no code or art was copied.

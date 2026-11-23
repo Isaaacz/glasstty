@@ -682,7 +682,7 @@ Flickable {
             title: I18n.tr("Fondo")
 
             SettingsControls.Row_ {
-                shown: !LockTheme.loginSynced
+                shown: !LockTheme.loginSynced && LockTheme.themeBg !== ""
                 label: I18n.tr("Fondo")
                 hint: I18n.tr("La imagen de la pantalla de inicio de sesión, o el fondo de pantalla que tienes ahora.")
                 SettingsControls.Choice_ {
@@ -896,7 +896,7 @@ Flickable {
             }
 
             SettingsControls.Row_ {
-                shown: !LockTheme.loginSynced
+                shown: !LockTheme.loginSynced && LockTheme.themeBg !== ""
                 label: I18n.tr("Color de acento")
                 hint: I18n.tr("El color de la línea de la contraseña y de los botones al pasar el ratón.")
                 SettingsControls.Choice_ {
