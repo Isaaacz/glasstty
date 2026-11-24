@@ -193,6 +193,18 @@ Scope {
         }
     }
 
+    // A symbol instead of the icon for some notices: the screenshot ones get a
+    // camera (glasstty's notify-shot.sh asks for it with a hint; niri's own
+    // screenshot notice is recognised by its text).
+    readonly property var glyphs: ({ camera: "󰄀" })
+    function glyphFor(n) {
+        const h = n && n.hints ? String(n.hints["x-glasstty-glyph"] || "") : "";
+        if (root.glyphs[h]) return root.glyphs[h];
+        const t = n ? String(n.summary || "") : "";
+        if (t === "Screenshot captured" || t === "Failed to save screenshot") return root.glyphs.camera;
+        return "";
+    }
+
     // The card's colour: the notch's (a drop looks like a piece of it), black,
     // or the theme's background; with the opacity on top.
     readonly property color baseColor: Config.dropColor === "black" ? "#000000"
@@ -219,6 +231,7 @@ Scope {
             property string kind: ""
             property var buttons: []
             property bool critical: false
+            property string glyph: ""
 
             function readN() {
                 if (!card.n) return;
@@ -233,6 +246,8 @@ Scope {
                 card.kind = ShellState.notifKind(card.n);
                 card.buttons = ShellState.notifButtons(card.n).slice(0, 3);
                 card.critical = card.n.urgency === NotificationUrgency.Critical;
+                card.glyph = root.glyphFor(card.n);
+                if (card.glyph !== "") card.image = "";
             }
             function refresh() {
                 card.readN();
@@ -376,7 +391,8 @@ Scope {
                         color: card.kind !== "" ? card.kindColor : Colors.accent
                         Text {
                             anchors.centerIn: parent
-                            text: card.kind === "ok" ? "󰄬" : card.kind === "warn" ? "󰀦"
+                            text: card.glyph !== "" ? card.glyph
+                                : card.kind === "ok" ? "󰄬" : card.kind === "warn" ? "󰀦"
                                 : card.kind === "fail" ? "󰅖" : card.kind === "info" ? "󰋽" : "󰂚"
                             color: "#101010"
                             font.family: Appearance.font; font.pixelSize: Math.round(root.iconSz * 0.58)
