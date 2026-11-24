@@ -136,7 +136,6 @@ Scope {
         anchors { top: true }
         implicitWidth: Math.max(560, Config.dropWidth + 60)
         implicitHeight: root.topY + root.maxShown * (root.cardH + root.gap) + 60
-        exclusiveZone: 0
         exclusionMode: ExclusionMode.Ignore
         color: "transparent"
         // Under the bar on niri (the bar is on Overlay there), so a card comes
