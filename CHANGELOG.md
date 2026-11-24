@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+**New**
+- **Cards from the notch:** `notch ok|warn|fail|info` shows a coloured card
+  from the notch, with buttons that answer back to a script (`--yes`/`--no`),
+  a click action (`--open`), `notch run` for a command's result and duration,
+  cards updated in place (`--replace`), and a Claude Code hook
+  (`notch hook claude`). Inspired by jrnxf/drip.
+
+**Fixed**
+- Open GTK apps recolour with the wallpaper when the GTK theme setting is
+  Adwaita (Fedora's default).
+
 ## v1.1.0 — 2026-11-23
 
 A safer installer and a lot more to shape.

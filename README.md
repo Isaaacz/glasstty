@@ -82,6 +82,36 @@ A preview stays pinned while you change things.
   </tr>
 </table>
 
+## Cards from the notch
+
+`notch` sends a card that drops out of the notch — green, amber, red or
+plain — for builds, deploys and coding agents (in the spirit of
+[drip](https://github.com/jrnxf/drip), which does this on a MacBook's notch).
+Cards also land in the Control Centre's history.
+
+```bash
+notch ok "Build passed" "12 s"
+notch fail "e2e failed" "3 tests"
+git log -1 --format='%s%n%an' | notch info          # first line = title, rest = detail
+notch run make test                                 # result and duration, keeps the exit status
+notch warn "Deploy to prod?" --yes Deploy --no Cancel && ./deploy.sh
+notch ok "Report ready" --open ./report.html --button "View report"
+id=$(notch info "Building…" --print-id); make; notch ok "Built" --replace "$id"
+```
+
+A question waits up to a minute and exits 0 (yes), 1 (no) or 2 (no answer).
+For **Claude Code**, add this to `~/.claude/settings.json`: a card comes out
+when Claude needs you or finishes, and clicking it brings its terminal back.
+
+```json
+{
+  "hooks": {
+    "Notification": [{ "hooks": [{ "type": "command", "command": "command -v notch >/dev/null && notch hook claude || true" }] }],
+    "Stop":         [{ "hooks": [{ "type": "command", "command": "command -v notch >/dev/null && notch hook claude || true" }] }]
+  }
+}
+```
+
 ## Keybindings
 
 | Keys | Action |

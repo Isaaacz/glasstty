@@ -1636,7 +1636,32 @@ Singleton {
             // through here again: they go back to the history, but the notch
             // must not announce them a second time.
             if (!root.dnd && !n.lastGeneration) root.flash("notif", root.notifFlashMs(n));
+            // A card updated in place (`notch ... --replace ID`, notify-send -r)
+            // keeps the same object: show it again with its new text.
+            const again = function () {
+                if (root.dnd) return;
+                root.lastNotif = n;
+                root.flash("notif", root.notifFlashMs(n));
+            };
+            n.summaryChanged.connect(again);
+            n.bodyChanged.connect(again);
         }
+    }
+
+    // drip-style cards (~/.local/bin/notch): the kind comes in the
+    // x-notch-kind hint — "ok", "warn", "fail" or "info". "" = a plain notification.
+    function notifKind(n) {
+        if (!n || !n.hints) return "";
+        const k = String(n.hints["x-notch-kind"] || "");
+        return ["ok", "warn", "fail", "info"].indexOf(k) >= 0 ? k : "";
+    }
+    // The buttons a card shows: its actions except "default" (a click on the card).
+    function notifButtons(n) {
+        if (!n || !n.actions) return [];
+        const out = [];
+        for (let i = 0; i < n.actions.length; i++)
+            if (n.actions[i].identifier !== "default") out.push(n.actions[i]);
+        return out;
     }
 
     // `lastNotif` holds an object that is NOT ours: the server destroys it when
@@ -1733,6 +1758,12 @@ Singleton {
         const techo = crit ? 12000 : 15000;
         const porDefecto = crit ? 11000 : 4200;
         if (!n) return porDefecto;
+        // A card asking something (buttons) waits up to a minute for the answer:
+        // the question is the point of it, and the script is waiting too.
+        if (root.notifKind(n) !== "" && root.notifButtons(n).length > 0) {
+            const tq = Number(n.expireTimeout);
+            return (!isFinite(tq) || tq <= 0) ? 30000 : Math.max(3000, Math.min(60000, Math.round(tq)));
+        }
         const t = Number(n.expireTimeout);
         if (!isFinite(t) || t < 0) return porDefecto;   // -1: you decide
         if (t === 0) return techo;                      // 0: never expire

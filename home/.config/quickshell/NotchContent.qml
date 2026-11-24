@@ -677,6 +677,12 @@ Item {
         active: root.mode === "notif"
 
         readonly property var n: ShellState.lastNotif
+        // drip-style cards from ~/.local/bin/notch: a coloured mark per kind
+        // and the actions as buttons (see ShellState.notifKind).
+        readonly property string kind: ShellState.notifKind(n)
+        readonly property var buttons: kind !== "" ? ShellState.notifButtons(n) : []
+        readonly property color kindColor: kind === "ok" ? "#4ade80" : kind === "warn" ? "#fbbf24"
+            : kind === "fail" ? "#f87171" : Colors.accent
 
         MouseArea {
             anchors.fill: parent
@@ -690,6 +696,14 @@ Item {
             onClicked: {
                 const n = notifLayer.n;
                 const acts = n ? n.actions : null;
+                // A card's click is its "default" action; its other actions
+                // are the buttons, so a click on the card never answers them.
+                if (notifLayer.kind !== "") {
+                    const d = acts ? acts.find(a => a.identifier === "default") : null;
+                    if (d) { ShellState.activity = ""; d.invoke(); }
+                    else if (notifLayer.buttons.length === 0) { ShellState.activity = ""; ShellState.togglePanel("control"); }
+                    return;
+                }
                 ShellState.activity = "";
                 if (acts && acts.length > 0) acts[0].invoke();
                 else ShellState.togglePanel("control");
@@ -700,7 +714,24 @@ Item {
             anchors { fill: parent; leftMargin: 13; rightMargin: 15 }
             spacing: 11
 
+            Rectangle {
+                visible: notifLayer.kind !== ""
+                Layout.preferredWidth: 34; Layout.preferredHeight: 34
+                Layout.alignment: Qt.AlignVCenter
+                radius: 17
+                color: Qt.rgba(notifLayer.kindColor.r, notifLayer.kindColor.g, notifLayer.kindColor.b, 0.18)
+                border.width: 1
+                border.color: Qt.rgba(notifLayer.kindColor.r, notifLayer.kindColor.g, notifLayer.kindColor.b, 0.45)
+                Text {
+                    anchors.centerIn: parent
+                    text: notifLayer.kind === "ok" ? "󰄬" : notifLayer.kind === "warn" ? "󰀦"
+                        : notifLayer.kind === "fail" ? "󰅖" : "󰋽"
+                    color: notifLayer.kindColor
+                    font.family: Appearance.font; font.pixelSize: 18
+                }
+            }
             Image {
+                visible: notifLayer.kind === ""
                 Layout.preferredWidth: 34; Layout.preferredHeight: 34
                 Layout.alignment: Qt.AlignVCenter
                 source: {
@@ -734,10 +765,45 @@ Item {
             }
 
             Text {
+                visible: notifLayer.kind === ""
                 Layout.alignment: Qt.AlignVCenter
                 text: notifLayer.n ? (notifLayer.n.appName || "") : ""
                 color: Colors.accentInk
                 font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXXS; font.weight: Font.Medium
+            }
+            // The card's buttons; the first is the main one (filled).
+            Row {
+                visible: notifLayer.buttons.length > 0
+                Layout.alignment: Qt.AlignVCenter
+                spacing: 6
+                Repeater {
+                    model: notifLayer.buttons.slice(0, 3)
+                    Rectangle {
+                        id: btn
+                        required property var modelData
+                        required property int index
+                        readonly property bool main: index === 0
+                        width: btnText.implicitWidth + 22; height: 26; radius: 13
+                        color: main ? notifLayer.kindColor
+                            : (btnMa.containsMouse ? Colors.fill2 : Colors.fill3)
+                        border.width: main ? 0 : 1
+                        border.color: Colors.hairline
+                        Text {
+                            id: btnText
+                            anchors.centerIn: parent
+                            text: btn.modelData.text
+                            color: btn.main ? "#101010" : Colors.label
+                            font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXXS; font.weight: Font.DemiBold
+                        }
+                        MouseArea {
+                            id: btnMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: { ShellState.activity = ""; btn.modelData.invoke(); }
+                        }
+                    }
+                }
             }
         }
     }

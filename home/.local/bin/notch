@@ -1,0 +1,199 @@
+#!/usr/bin/env bash
+# notch — scriptable cards from the notch (in the spirit of jrnxf/drip, for
+# glasstty's Quickshell notch instead of the MacBook's).
+#
+#   notch ok   "Build passed" ["detail"]
+#   notch warn "Disk almost full"
+#   notch fail "e2e failed" "3 tests"
+#   notch info "Backup started"
+#   some-command | notch ok                  first line = title, rest = detail
+#   notch warn "Deploy to prod?" --yes Deploy --no Cancel && ./deploy.sh
+#   notch ok "Report ready" --open ./report.html --button "View report"
+#   notch run make test                      result and duration, keeps the exit status
+#   id=$(notch info "Building…" --print-id); notch ok "Built" --replace "$id"
+#   notch hook claude                        for Claude Code hooks (reads JSON on stdin)
+#
+# Options:
+#   --yes LABEL / --no LABEL   buttons; waits for the answer: exit 0 = yes,
+#                              1 = no, 2 = no answer (timeout or closed)
+#   --open TARGET              open a file, folder or URL when the card is clicked
+#                              (--button LABEL shows it as a button instead)
+#   -t, --timeout SECONDS      how long the card stays (questions: up to 60)
+#   --replace ID               update a card in place; --print-id prints its id
+#
+# Cards are ordinary notifications with a hint (x-notch-kind) the shell draws
+# as a coloured card; they also land in the Control Centre's history.
+set -uo pipefail
+
+usage() { sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'; }
+command -v notify-send >/dev/null 2>&1 || { echo "notch: notify-send is missing (libnotify)" >&2; exit 127; }
+
+# ── the language of the texts notch writes itself (run, hook) ──
+. "$HOME/.config/glasstty/scripts/lang.sh" 2>/dev/null || tr_() { printf '%s' "$1"; }
+
+fmt_secs() {   # 75 -> 1m 15s
+    local s=$1
+    if [ "$s" -ge 3600 ]; then printf '%dh %dm' $((s / 3600)) $((s % 3600 / 60))
+    elif [ "$s" -ge 60 ]; then printf '%dm %ds' $((s / 60)) $((s % 60))
+    else printf '%ds' "$s"; fi
+}
+
+# card KIND TITLE DETAIL — reads the option variables below
+yes_l=""; no_l=""; open_t=""; button_l=""; timeout_s=""; replace_id=""; print_id=0
+card() {
+    local kind="$1" title="$2" detail="$3"
+    local args=(-a notch -h "string:x-notch-kind:$kind")
+    case "$kind" in fail) args+=(-u critical) ;; warn) args+=(-u normal) ;; *) args+=(-u low) ;; esac
+    [ -n "$replace_id" ] && args+=(-r "$replace_id")
+
+    # a question: buttons, wait for the answer, close it ourselves on timeout
+    if [ -n "$yes_l$no_l" ]; then
+        local t="${timeout_s:-30}"
+        [ "$t" -gt 60 ] && t=60
+        args+=(-t "$((t * 1000))" -p --wait)
+        [ -n "$yes_l" ] && args+=(-A "yes=$yes_l")
+        [ -n "$no_l" ] && args+=(-A "no=$no_l")
+        local out; out="$(mktemp)"
+        notify-send "${args[@]}" -- "$title" "$detail" > "$out" 2>/dev/null &
+        local pid=$! waited=0
+        while kill -0 "$pid" 2>/dev/null && [ "$waited" -lt $((t * 10 + 10)) ]; do sleep 0.1; waited=$((waited + 1)); done
+        local id; id="$(sed -n 1p "$out")"
+        if kill -0 "$pid" 2>/dev/null; then
+            kill "$pid" 2>/dev/null
+            [ -n "$id" ] && gdbus call --session --dest org.freedesktop.Notifications \
+                --object-path /org/freedesktop/Notifications \
+                --method org.freedesktop.Notifications.CloseNotification "$id" >/dev/null 2>&1
+        fi
+        local answer; answer="$(sed -n 2p "$out")"; rm -f "$out"
+        [ "$print_id" = 1 ] && [ -n "$id" ] && echo "$id" >&2
+        case "$answer" in yes) return 0 ;; no) return 1 ;; *) return 2 ;; esac
+    fi
+
+    [ -n "$timeout_s" ] && args+=(-t "$((timeout_s * 1000))")
+
+    # something to do on a click: wait for it in the background, return now
+    if [ -n "$open_t" ]; then
+        local key=default
+        [ -n "$button_l" ] && key=open
+        local label="${button_l:-$(tr_ 'Abrir' 'Open')}"
+        local target="$open_t"
+        [ -e "$target" ] && target="$(realpath -- "$target")"
+        local idf; idf="$(mktemp)"
+        ( a="$(notify-send "${args[@]}" -p --wait -A "$key=$label" -- "$title" "$detail" | tee "$idf" | sed -n 2p)"
+          [ "$a" = "$key" ] && xdg-open "$target" >/dev/null 2>&1 ) >/dev/null 2>&1 &
+        disown
+        if [ "$print_id" = 1 ]; then
+            for _ in 1 2 3 4 5 6 7 8 9 10; do [ -s "$idf" ] && break; sleep 0.05; done
+            sed -n 1p "$idf"
+        fi
+        ( sleep 2; rm -f "$idf" ) >/dev/null 2>&1 &
+        return 0
+    fi
+
+    [ "$print_id" = 1 ] && args+=(-p)
+    notify-send "${args[@]}" -- "$title" "$detail"
+}
+
+# ── notch run CMD… ──
+run_cmd() {
+    [ $# -gt 0 ] || { echo "notch run: no command" >&2; exit 64; }
+    local label="$*" start rc took
+    [ ${#label} -gt 60 ] && label="${label:0:57}…"
+    start=$(date +%s)
+    "$@"; rc=$?
+    took="$(fmt_secs $(( $(date +%s) - start )))"
+    if [ "$rc" -eq 0 ]; then
+        card ok "$label" "$(tr_ 'Terminó en' 'Done in') $took"
+    else
+        card fail "$label" "$(tr_ 'Falló, código' 'Failed, exit') $rc · $took"
+    fi
+    exit "$rc"
+}
+
+# ── notch hook claude: Claude Code hooks (Notification, Stop, …) ──
+# The card names the project; a click brings back the terminal Claude runs in.
+terminal_window() {   # the niri window of the terminal that is an ancestor of this process
+    command -v niri >/dev/null 2>&1 && [ -n "${NIRI_SOCKET:-}" ] || return 0
+    local pids=() p=$$
+    while [ -n "$p" ] && [ "$p" -gt 1 ]; do
+        pids+=("$p")
+        p="$(awk '/^PPid:/ {print $2}' "/proc/$p/status" 2>/dev/null)"
+    done
+    niri msg --json windows 2>/dev/null | python3 -c '
+import json, sys
+pids = set(int(x) for x in sys.argv[1:])
+for w in json.load(sys.stdin):
+    if w.get("pid") in pids:
+        print(w["id"]); break' "${pids[@]}" 2>/dev/null
+}
+hook_claude() {
+    local json event msg cwd project win
+    json="$(cat)"
+    read -r event cwd msg < <(printf '%s' "$json" | python3 -c '
+import json, sys
+try: d = json.load(sys.stdin)
+except Exception: d = {}
+m = " ".join(str(d.get("message", "")).split())
+print(d.get("hook_event_name", ""), (d.get("cwd") or "-").replace(" ", " "), m)' 2>/dev/null)
+    cwd="${cwd//$' '/ }"
+    project="$(basename -- "${cwd:-$PWD}")"
+    win="$(terminal_window)"
+    local kind title
+    case "$event" in
+        Notification) kind=warn; title="$(tr_ 'Claude te necesita' 'Claude needs you') · $project" ;;
+        Stop) kind=ok; title="$(tr_ 'Claude terminó' 'Claude is done') · $project"; msg="" ;;
+        SubagentStop) exit 0 ;;
+        *) kind=info; title="Claude · $project" ;;
+    esac
+    local args=(-a notch -h "string:x-notch-kind:$kind" -u normal)
+    if [ -n "$win" ]; then
+        ( a="$(notify-send "${args[@]}" --wait -A "default=$(tr_ 'Ir al terminal' 'Go to terminal')" -- "$title" "$msg")"
+          [ "$a" = default ] && niri msg action focus-window --id "$win" ) >/dev/null 2>&1 &
+        disown
+    else
+        notify-send "${args[@]}" -- "$title" "$msg"
+    fi
+    exit 0
+}
+
+# ── arguments ──
+[ $# -gt 0 ] || { usage >&2; exit 64; }
+cmd="$1"; shift
+case "$cmd" in
+    -h|--help|help) usage; exit 0 ;;
+    run) run_cmd "$@" ;;
+    hook)
+        case "${1:-}" in
+            claude) hook_claude ;;
+            *) echo "notch hook: unknown agent '${1:-}' (try: claude)" >&2; exit 64 ;;
+        esac ;;
+    ok|warn|fail|info) ;;
+    *) echo "notch: unknown kind '$cmd' (ok, warn, fail, info, run, hook)" >&2; exit 64 ;;
+esac
+
+title=""; detail=""; pos=()
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --yes) yes_l="${2:-}"; shift ;;
+        --no) no_l="${2:-}"; shift ;;
+        --open) open_t="${2:-}"; shift ;;
+        --button) button_l="${2:-}"; shift ;;
+        -t|--timeout) timeout_s="${2:-}"; shift ;;
+        --replace) replace_id="${2:-}"; shift ;;
+        --print-id) print_id=1 ;;
+        --) shift; pos+=("$@"); break ;;
+        -*) echo "notch: unknown option $1" >&2; exit 64 ;;
+        *) pos+=("$1") ;;
+    esac
+    shift
+done
+case "${timeout_s:-0}" in *[!0-9]*) echo "notch: --timeout takes whole seconds" >&2; exit 64 ;; esac
+title="${pos[0]:-}"; detail="${pos[1]:-}"
+# no title: read it from stdin (first line = title, the rest = detail)
+if [ -z "$title" ] && [ ! -t 0 ]; then
+    input="$(cat)"
+    title="$(printf '%s\n' "$input" | sed -n 1p)"
+    detail="$(printf '%s\n' "$input" | sed -n '2,$p')"
+fi
+[ -n "$title" ] || { echo "notch: no title" >&2; exit 64; }
+card "$cmd" "$title" "$detail"
