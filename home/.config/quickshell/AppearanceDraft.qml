@@ -30,7 +30,9 @@ Singleton {
         "lockClockWeight", "lockClockFont", "lockClockColor", "lock12h", "lockSeconds", "lockShowDate",
         "lockDateFmt", "lockSide", "lockFormY", "lockFieldStyle", "lockChar", "lockAccent",
         "lockMessage", "lockShowMedia", "lockShowBattery", "lockShowName", "lockShowPower",
-        "lockCard", "lockAvatar", "lockPreset", "lockPanel", "lockDatePill"
+        "lockCard", "lockAvatar", "lockPreset", "lockPanel", "lockDatePill",
+        "notifStyle", "notifSeconds", "dropHeight", "dropWidth", "dropColor", "dropOpacity", "dropMax",
+        "dropGap", "dropRing", "dropHoverPause", "dropBody", "dropKindColors", "dropMotion"
     ]
     // What has to run after applying, by group.
     readonly property var effectKeys: ["windowRounding", "winOpacity", "winOpacityInactive", "termOpacity",

@@ -54,7 +54,7 @@ Flickable {
     property string note: I18n.tr("Se guarda solo en ~/.config/quickshell-rice.json")
     readonly property int matchCount: cLang.visibleRows + cNotch.visibleRows
         + cBehav.visibleRows + cBar.visibleRows + cFont.visibleRows + cFx.visibleRows
-        + cWall.visibleRows + cColors.visibleRows
+        + cWall.visibleRows + cColors.visibleRows + notifs.matchCount
     signal actionRun
     onActionRun: AppearanceDraft.restoreDefaults()
 
@@ -995,11 +995,18 @@ Flickable {
             }
         }
 
+        // ─────────────────── pop-ups (AppearanceNotifs.qml) ───────────────────
+        AppearanceNotifs {
+            id: notifs
+            tab: root.tab
+            searching: root.searching
+        }
+
         SettingsControls.Note_ {
             Layout.topMargin: 10
             visible: ShellState.settingsQuery.length > 0
                      && !cLang.visible && !cNotch.visible && !cBehav.visible && !cBar.visible
-                     && !cFont.visible && !cFx.visible && !cWall.visible
+                     && !cFont.visible && !cFx.visible && !cWall.visible && notifs.matchCount === 0
             text: I18n.tr("Ningún ajuste de Apariencia coincide con «{0}».", ShellState.settingsQuery)
         }
     }

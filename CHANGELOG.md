@@ -11,11 +11,13 @@
 - **Notifications drop out of the notch:** every notification is its own
   pill-shaped card that falls out of the notch; up to three stack below it
   and the rest wait in a counter. A ring shows the time left, hovering stops
-  it, a right click puts the card away. A new Settings tab, **Pop-ups**,
-  sets their height, width, distance from the notch, background (notch,
+  it, a right click puts the card away. A new tab in Settings › Appearance,
+  **Pop-ups**, with a live preview, sets their height, width, distance from the notch, background (notch,
   black or theme) and opacity, colours by kind, duration, hover pause, the
   ring, how many at once, the detail line and the animation, with a button
-  that shows an example; it also switches back to the notch stretching.
+  that shows an example and one that puts them back to the defaults (kept
+  with Apply, like the rest of Appearance); it also switches back to the
+  notch stretching.
 
 **Fixed**
 - Open GTK apps recolour with the wallpaper when the GTK theme setting is

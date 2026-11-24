@@ -37,7 +37,6 @@ Scope {
         { id: "profiles", icon: "󰆓", label: I18n.tr("Perfiles"), desc: I18n.tr("Guarda y recupera distintas apariencias") },
         { id: "launcher", icon: "󰍉", label: I18n.tr("Lanzador"), desc: I18n.tr("Orden de las aplicaciones y aprendizaje") },
         { id: "system", icon: "󰒓", label: I18n.tr("Sistema"), desc: I18n.tr("Brillo, energía, red y notificaciones") },
-        { id: "drops",  icon: "󰂚", label: I18n.tr("Avisos"), desc: I18n.tr("Estilo, tamaño, color y tiempo de las notificaciones") },
         { id: "displays", icon: Icons.monitor, label: I18n.tr("Pantallas"), desc: I18n.tr("Colocación, resolución y escala") },
         { id: "audio",  icon: "󰕾", label: I18n.tr("Sonido"), desc: I18n.tr("Volumen y dispositivos PipeWire") },
         { id: "bt",     icon: "󰂯", label: I18n.tr("Bluetooth"), desc: I18n.tr("Radio, equipos guardados y descubrimiento") },
@@ -49,7 +48,7 @@ Scope {
     readonly property bool searching: ShellState.settingsQuery.trim().length > 0
     readonly property int totalHits: look.matchCount + system.matchCount + audio.matchCount
         + bt.matchCount + keys.matchCount + about.matchCount + profiles.matchCount + launcher.matchCount
-        + displays.matchCount + drops.matchCount
+        + displays.matchCount
     readonly property string actionConfirmHint: I18n.tr("Vuelve a pulsar «Confirmar» para restablecer todos los ajustes de Apariencia.")
 
     function sectionInfo(id) {
@@ -62,7 +61,6 @@ Scope {
         if (id === "profiles") return profiles.matchCount;
         if (id === "launcher") return launcher.matchCount;
         if (id === "system") return system.matchCount;
-        if (id === "drops") return drops.matchCount;
         if (id === "displays") return displays.matchCount;
         if (id === "audio") return audio.matchCount;
         if (id === "bt") return bt.matchCount;
@@ -586,7 +584,8 @@ Scope {
                             { id: "type", label: I18n.tr("Tipografía") },
                             { id: "colors", label: "Cores" },
                             { id: "effects", label: I18n.tr("Fondo y efectos") },
-                            { id: "lock", label: I18n.tr("Bloqueo") }
+                            { id: "lock", label: I18n.tr("Bloqueo") },
+                            { id: "notifs", label: I18n.tr("Avisos") }
                         ]
                         onPicked: function (id) { current = id; look.contentY = 0; }
                     }
@@ -650,7 +649,6 @@ Scope {
                                                      : root.section === "profiles" ? profiles
                                                      : root.section === "launcher" ? launcher
                                                      : root.section === "system" ? system
-                                                     : root.section === "drops" ? drops
                                                      : root.section === "displays" ? displays
                                                      : root.section === "audio" ? audio
                                                      : root.section === "bt" ? bt
@@ -670,7 +668,6 @@ Scope {
                         SettingsProfiles { id: profiles; anchors.fill: parent; visible: ShellState.settingsOpen && !content.noResults && root.section === "profiles" }
                         SettingsLauncher { id: launcher; anchors.fill: parent; visible: ShellState.settingsOpen && !content.noResults && root.section === "launcher" }
                         SettingsSystem     { id: system; anchors.fill: parent; visible: ShellState.settingsOpen && !content.noResults && root.section === "system" }
-                        SettingsNotifs     { id: drops;  anchors.fill: parent; visible: ShellState.settingsOpen && !content.noResults && root.section === "drops" }
                         SettingsDisplays   { id: displays; anchors.fill: parent; visible: ShellState.settingsOpen && !content.noResults && root.section === "displays" }
                         SettingsAudio      { id: audio;  anchors.fill: parent; visible: ShellState.settingsOpen && !content.noResults && root.section === "audio" }
                         SettingsBluetooth  { id: bt;     anchors.fill: parent; visible: ShellState.settingsOpen && !content.noResults && root.section === "bt" }
