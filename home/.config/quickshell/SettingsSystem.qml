@@ -250,16 +250,6 @@ Flickable {
                 }
             }
 
-            SettingsControls.Row_ {
-                label: I18n.tr("Estilo de los avisos")
-                hint: I18n.tr("Gotas: cada aviso cae del notch como una tarjeta y se apilan debajo. Notch: el propio notch se estira para mostrarlo.")
-                SettingsControls.Choice_ {
-                    options: [I18n.tr("Gotas"), I18n.tr("Notch")]
-                    current: Config.notifStyle === "notch" ? I18n.tr("Notch") : I18n.tr("Gotas")
-                    onPicked: function (v) { Config.notifStyle = (v === I18n.tr("Notch")) ? "notch" : "drops"; Config.save(); }
-                }
-            }
-
             SettingsControls.Action_ {
                 label: I18n.tr("Vaciar la bandeja")
                 hint: I18n.tr("Descarta todas las notificaciones guardadas.")

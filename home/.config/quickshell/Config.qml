@@ -41,6 +41,20 @@ Singleton {
     // How notifications pop up: "drops" = cards that fall out of the notch and
     // stack under it (NotifDrops.qml); "notch" = the notch itself stretches.
     property alias notifStyle: opts.notifStyle
+    // The drops' look (Settings › Pop-ups). notifSeconds is how long a notice
+    // stays when the application does not ask for a time, in either style.
+    property alias notifSeconds: opts.notifSeconds
+    property alias dropHeight: opts.dropHeight      // px, a card with a detail line
+    property alias dropWidth: opts.dropWidth        // px, the widest a card gets
+    property alias dropColor: opts.dropColor        // "notch" | "black" | "theme"
+    property alias dropOpacity: opts.dropOpacity    // %
+    property alias dropMax: opts.dropMax            // cards on screen at once
+    property alias dropGap: opts.dropGap            // px between the notch and the first card
+    property alias dropRing: opts.dropRing          // the time-left ring
+    property alias dropHoverPause: opts.dropHoverPause
+    property alias dropBody: opts.dropBody          // show the detail line
+    property alias dropKindColors: opts.dropKindColors  // green/amber/red per kind, or the theme accent
+    property alias dropMotion: opts.dropMotion      // "bouncy" | "smooth" | "none"
     readonly property bool island: opts.notchStyle === "island"
 
     property alias notchColor: opts.notchColor
@@ -464,6 +478,18 @@ Singleton {
             property string notchStyle: "notch"
             property int islandGap: 4
             property string notifStyle: "drops"
+            property real notifSeconds: 4.2
+            property int dropHeight: 58
+            property int dropWidth: 460
+            property string dropColor: "notch"
+            property int dropOpacity: 100
+            property int dropMax: 3
+            property int dropGap: 8
+            property bool dropRing: true
+            property bool dropHoverPause: true
+            property bool dropBody: true
+            property bool dropKindColors: true
+            property string dropMotion: "bouncy"
             property string notchColor: "#000000"
             property bool barBlur: true
             property string iconTheme: ""

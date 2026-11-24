@@ -25,10 +25,20 @@ import Quickshell.Services.Notifications
 Scope {
     id: root
 
-    readonly property int maxShown: 3
+    // Everything here is set in Settings › Pop-ups (Config.drop*).
+    readonly property int maxShown: Math.max(1, Math.min(5, Config.dropMax))
     readonly property int gap: 8
     // Cards live on the focused screen, right under the notch at rest.
-    readonly property int topY: ShellState.bandH + ShellState.notchTopGap + 8
+    readonly property int topY: ShellState.bandH + ShellState.notchTopGap + Config.dropGap
+    readonly property int cardH: Math.max(40, Math.min(80, Config.dropHeight))
+    // How a card moves: a bouncy fall, a smooth one, or none at all.
+    readonly property real spr: Config.dropMotion === "smooth" ? 3.2 : 3.4
+    readonly property real dmp: Config.dropMotion === "smooth" ? 0.55 : 0.26
+    readonly property bool still: Config.dropMotion === "none"
+    // Icon and text grow a little with the card's height.
+    readonly property int iconSz: Math.round(root.cardH * 0.42)
+    readonly property int titlePx: Math.max(11, Math.min(16, Math.round(root.cardH * 0.21)))
+    readonly property int bodyPx: Math.max(10, root.titlePx - 2)
 
     // Live card items, top to bottom, and the notifications waiting their turn.
     property var cards: []
@@ -124,8 +134,8 @@ Scope {
         }
         visible: root.cards.length > 0 || root.queue.length > 0
         anchors { top: true }
-        implicitWidth: 560
-        implicitHeight: root.topY + 3 * 76 + 60
+        implicitWidth: Math.max(560, Config.dropWidth + 60)
+        implicitHeight: root.topY + root.maxShown * (root.cardH + root.gap) + 60
         exclusiveZone: 0
         exclusionMode: ExclusionMode.Ignore
         color: "transparent"
@@ -171,21 +181,26 @@ Scope {
             color: root.cardColor
             opacity: on ? 1 : 0
             scale: on ? 1 : 0.4
-            Behavior on y { SpringAnimation { spring: 4; damping: 0.32; epsilon: 0.3 } }
+            Behavior on y { enabled: !root.still; SpringAnimation { spring: 4; damping: 0.32; epsilon: 0.3 } }
             Behavior on opacity { NumberAnimation { duration: Appearance.mIn; easing.type: Easing.OutCubic } }
             Behavior on scale { SpringAnimation { spring: 5; damping: 0.3; epsilon: 0.01 } }
             Text {
                 id: waitText
                 anchors.centerIn: parent
                 text: Math.max(1, root.queue.length)   // keeps its number while it fades out
-                color: Colors.label
+                color: root.ink
                 font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXXS; font.weight: Font.DemiBold
             }
         }
     }
 
-    // The card's colour follows the notch's, so a drop looks like a piece of it.
-    readonly property color cardColor: Colors.notchTint(Config.notchColor)
+    // The card's colour: the notch's (a drop looks like a piece of it), black,
+    // or the theme's background; with the opacity on top.
+    readonly property color baseColor: Config.dropColor === "black" ? "#000000"
+        : Config.dropColor === "theme" ? Colors.bg : Colors.notchTint(Config.notchColor)
+    readonly property color cardColor: Qt.rgba(baseColor.r, baseColor.g, baseColor.b,
+        Math.max(0.3, Math.min(1, Config.dropOpacity / 100)))
+    readonly property color ink: Colors.inkOn(baseColor)
 
     Component {
         id: cardComp
@@ -234,11 +249,15 @@ Scope {
                 goneTimer.start();
             }
 
-            readonly property color kindColor: kind === "ok" ? "#4ade80" : kind === "warn" ? "#fbbf24"
+            readonly property color kindColor: !Config.dropKindColors ? Colors.accent
+                : kind === "ok" ? "#4ade80" : kind === "warn" ? "#fbbf24"
                 : kind === "fail" ? "#f87171" : Colors.accent
 
-            readonly property int fullH: body.length > 0 ? 58 : 46
-            readonly property int fullW: Math.max(230, Math.min(460, row.implicitWidth + 28))
+            readonly property color ink: root.ink
+            readonly property bool showBody: Config.dropBody && body.length > 0
+            readonly property int fullH: showBody ? root.cardH : Math.max(36, root.cardH - 12)
+            readonly property int fullW: Math.max(Math.min(230, Config.dropWidth),
+                Math.min(Math.max(260, Config.dropWidth), row.implicitWidth + 28))
 
             // ── the drop: born small under the notch, falls, opens up ──
             readonly property real targetY: { root.layoutTick; return root.topY + root.slotY(card); }
@@ -249,11 +268,11 @@ Scope {
             height: leaving ? fullH * 0.55 : landed ? fullH : 26
             opacity: leaving ? 0 : 1
             Behavior on y {
-                enabled: !card.leaving
-                SpringAnimation { spring: 3.4; damping: 0.26; epsilon: 0.3 }
+                enabled: !card.leaving && !root.still
+                SpringAnimation { spring: root.spr; damping: root.dmp; epsilon: 0.3 }
             }
-            Behavior on width { SpringAnimation { spring: 4.2; damping: 0.3; epsilon: 0.3 } }
-            Behavior on height { SpringAnimation { spring: 4.2; damping: 0.3; epsilon: 0.3 } }
+            Behavior on width { enabled: !root.still; SpringAnimation { spring: 4.2; damping: root.dmp + 0.04; epsilon: 0.3 } }
+            Behavior on height { enabled: !root.still; SpringAnimation { spring: 4.2; damping: root.dmp + 0.04; epsilon: 0.3 } }
             Behavior on opacity {
                 SequentialAnimation {
                     PauseAnimation { duration: 90 }
@@ -292,7 +311,7 @@ Scope {
                 target: card; property: "remain"
                 from: 1; to: 0
                 duration: card.n ? ShellState.notifFlashMs(card.n) : 4200
-                paused: running && ma.containsMouse && ma.moved
+                paused: running && Config.dropHoverPause && ma.containsMouse && ma.moved
                 onFinished: if (!card.leaving && card.remain <= 0.001) card.leave()
             }
 
@@ -302,7 +321,7 @@ Scope {
                 radius: height / 2
                 color: root.cardColor
                 border.width: 1
-                border.color: Qt.rgba(1, 1, 1, ma.containsMouse && ma.moved ? 0.12 : 0.05)
+                border.color: Qt.rgba(card.ink.r, card.ink.g, card.ink.b, ma.containsMouse && ma.moved ? 0.12 : 0.05)
 
                 MouseArea {
                     id: ma
@@ -347,21 +366,21 @@ Scope {
                     // kind mark, or the application's icon for an ordinary notification
                     Rectangle {
                         visible: card.kind !== "" || card.image === ""
-                        Layout.preferredWidth: 24; Layout.preferredHeight: 24
+                        Layout.preferredWidth: root.iconSz; Layout.preferredHeight: root.iconSz
                         Layout.alignment: Qt.AlignVCenter
-                        radius: 12
+                        radius: root.iconSz / 2
                         color: card.kind !== "" ? card.kindColor : Colors.accent
                         Text {
                             anchors.centerIn: parent
                             text: card.kind === "ok" ? "󰄬" : card.kind === "warn" ? "󰀦"
                                 : card.kind === "fail" ? "󰅖" : card.kind === "info" ? "󰋽" : "󰂚"
                             color: "#101010"
-                            font.family: Appearance.font; font.pixelSize: 14
+                            font.family: Appearance.font; font.pixelSize: Math.round(root.iconSz * 0.58)
                         }
                     }
                     Image {
                         visible: card.kind === "" && card.image !== ""
-                        Layout.preferredWidth: 26; Layout.preferredHeight: 26
+                        Layout.preferredWidth: root.iconSz + 2; Layout.preferredHeight: root.iconSz + 2
                         Layout.alignment: Qt.AlignVCenter
                         source: card.image
                         sourceSize.width: 52; sourceSize.height: 52
@@ -372,24 +391,24 @@ Scope {
                     ColumnLayout {
                         Layout.alignment: Qt.AlignVCenter
                         Layout.fillWidth: true
-                        Layout.maximumWidth: 300
+                        Layout.maximumWidth: Math.max(140, Config.dropWidth - 160)
                         spacing: 1
                         Text {
                             Layout.fillWidth: true
-                            Layout.maximumWidth: 300
+                            Layout.maximumWidth: Math.max(140, Config.dropWidth - 160)
                             text: card.title
-                            color: "#f5f5f5"; elide: Text.ElideRight
-                            font.family: Appearance.fontUI; font.pixelSize: Appearance.fsS; font.weight: Font.DemiBold
+                            color: card.ink; elide: Text.ElideRight
+                            font.family: Appearance.fontUI; font.pixelSize: root.titlePx; font.weight: Font.DemiBold
                         }
                         Text {
                             Layout.fillWidth: true
-                            Layout.maximumWidth: 300
-                            visible: card.body.length > 0
+                            Layout.maximumWidth: Math.max(140, Config.dropWidth - 160)
+                            visible: card.showBody
                             text: card.body
-                            color: Qt.rgba(1, 1, 1, 0.6); elide: Text.ElideRight
+                            color: Qt.rgba(card.ink.r, card.ink.g, card.ink.b, 0.6); elide: Text.ElideRight
                             textFormat: Text.StyledText
                             maximumLineCount: 1
-                            font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXXS
+                            font.family: Appearance.fontUI; font.pixelSize: root.bodyPx
                         }
                     }
 
@@ -407,12 +426,12 @@ Scope {
                                 readonly property bool main: index === 0
                                 width: btnText.implicitWidth + 22; height: 26; radius: 13
                                 color: main ? Qt.darker(card.kindColor, btnMa.containsMouse ? 1.0 : 1.15)
-                                    : (btnMa.containsMouse ? Qt.rgba(1, 1, 1, 0.16) : Qt.rgba(1, 1, 1, 0.09))
+                                    : Qt.rgba(card.ink.r, card.ink.g, card.ink.b, btnMa.containsMouse ? 0.16 : 0.09)
                                 Text {
                                     id: btnText
                                     anchors.centerIn: parent
                                     text: btn.modelData.text
-                                    color: btn.main ? "#101010" : "#f5f5f5"
+                                    color: btn.main ? "#101010" : card.ink
                                     font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXXS; font.weight: Font.DemiBold
                                 }
                                 MouseArea {
@@ -428,13 +447,14 @@ Scope {
 
                     // the ring with the time left (also next to buttons: a question waits too)
                     Item {
+                        visible: Config.dropRing
                         Layout.preferredWidth: 18; Layout.preferredHeight: 18
                         Layout.alignment: Qt.AlignVCenter
                         Shape {
                             anchors.fill: parent
                             preferredRendererType: Shape.CurveRenderer
                             ShapePath {
-                                strokeColor: Qt.rgba(1, 1, 1, 0.12)
+                                strokeColor: Qt.rgba(card.ink.r, card.ink.g, card.ink.b, 0.12)
                                 strokeWidth: 2.2
                                 fillColor: "transparent"
                                 PathAngleArc { centerX: 9; centerY: 9; radiusX: 7; radiusY: 7; startAngle: 0; sweepAngle: 360 }

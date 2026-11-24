@@ -1764,7 +1764,7 @@ Singleton {
         // it does not go below 10 s or above 12. The rest, from 1.5 s to 15 s.
         const suelo = crit ? 10000 : 1500;
         const techo = crit ? 12000 : 15000;
-        const porDefecto = crit ? 11000 : 4200;
+        const porDefecto = crit ? 11000 : Math.round(Math.max(1.5, Math.min(15, Config.notifSeconds)) * 1000);
         if (!n) return porDefecto;
         // A card asking something (buttons) waits up to a minute for the answer:
         // the question is the point of it, and the script is waiting too.
