@@ -226,7 +226,10 @@ Scope {
                 card.body = ShellState.tn(card.n.body || "");
                 card.appName = card.n.appName || "";
                 card.image = (card.n.image && card.n.image.length > 0) ? card.n.image
-                    : (card.n.appIcon ? Quickshell.iconPath(card.n.appIcon, "dialog-information") : "");
+                    : !card.n.appIcon ? ""
+                    : card.n.appIcon.startsWith("/") ? "file://" + card.n.appIcon
+                    : card.n.appIcon.startsWith("file:") ? card.n.appIcon
+                    : Quickshell.iconPath(card.n.appIcon, true);   // "" when the theme lacks it
                 card.kind = ShellState.notifKind(card.n);
                 card.buttons = ShellState.notifButtons(card.n).slice(0, 3);
                 card.critical = card.n.urgency === NotificationUrgency.Critical;
@@ -362,9 +365,11 @@ Scope {
                     opacity: card.landed && !card.leaving && card.width > card.fullW * 0.8 ? 1 : 0
                     Behavior on opacity { NumberAnimation { duration: card.leaving ? 90 : 200; easing.type: Easing.OutCubic } }
 
-                    // kind mark, or the application's icon for an ordinary notification
+                    // kind mark, or the application's icon for an ordinary notification.
+                    // A card that brings its own icon (`notch --icon`, e.g. Claude's)
+                    // shows it, with the kind as a small coloured dot on its corner.
                     Rectangle {
-                        visible: card.kind !== "" || card.image === ""
+                        visible: card.image === ""
                         Layout.preferredWidth: root.iconSz; Layout.preferredHeight: root.iconSz
                         Layout.alignment: Qt.AlignVCenter
                         radius: root.iconSz / 2
@@ -377,14 +382,26 @@ Scope {
                             font.family: Appearance.font; font.pixelSize: Math.round(root.iconSz * 0.58)
                         }
                     }
-                    Image {
-                        visible: card.kind === "" && card.image !== ""
+                    Item {
+                        visible: card.image !== ""
                         Layout.preferredWidth: root.iconSz + 2; Layout.preferredHeight: root.iconSz + 2
                         Layout.alignment: Qt.AlignVCenter
-                        source: card.image
-                        sourceSize.width: 52; sourceSize.height: 52
-                        fillMode: Image.PreserveAspectFit
-                        asynchronous: true
+                        Image {
+                            anchors.fill: parent
+                            source: card.image
+                            sourceSize.width: 64; sourceSize.height: 64
+                            fillMode: Image.PreserveAspectFit
+                            asynchronous: true
+                        }
+                        Rectangle {
+                            visible: card.kind !== ""
+                            readonly property int d: Math.max(8, Math.round(root.iconSz * 0.38))
+                            width: d; height: d; radius: d / 2
+                            anchors { right: parent.right; bottom: parent.bottom; margins: -2 }
+                            color: card.kindColor
+                            border.width: 2
+                            border.color: root.baseColor
+                        }
                     }
 
                     ColumnLayout {

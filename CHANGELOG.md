@@ -7,7 +7,8 @@
   from the notch, with buttons that answer back to a script (`--yes`/`--no`),
   a click action (`--open`), `notch run` for a command's result and duration,
   cards updated in place (`--replace`), and a Claude Code hook
-  (`notch hook claude`). Inspired by jrnxf/drip.
+  (`notch hook claude`, with Claude's icon when the Claude app is installed);
+  `--icon` gives any card its own icon. Inspired by jrnxf/drip.
 - **Notifications drop out of the notch:** every notification is its own
   pill-shaped card that falls out of the notch; up to three stack below it
   and the rest wait in a counter. A ring shows the time left, hovering stops

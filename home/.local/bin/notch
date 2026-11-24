@@ -19,13 +19,15 @@
 #   --open TARGET              open a file, folder or URL when the card is clicked
 #                              (--button LABEL shows it as a button instead)
 #   -t, --timeout SECONDS      how long the card stays (questions: up to 60)
+#   -i, --icon NAME|PATH       an icon instead of the kind's mark (the kind
+#                              stays as a coloured dot on its corner)
 #   --replace ID               update a card in place; --print-id prints its id
 #
 # Cards are ordinary notifications with a hint (x-notch-kind) the shell draws
 # as a coloured card; they also land in the Control Centre's history.
 set -uo pipefail
 
-usage() { sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,27p' "$0" | sed 's/^# \{0,1\}//'; }
 command -v notify-send >/dev/null 2>&1 || { echo "notch: notify-send is missing (libnotify)" >&2; exit 127; }
 
 # ── the language of the texts notch writes itself (run, hook) ──
@@ -39,12 +41,13 @@ fmt_secs() {   # 75 -> 1m 15s
 }
 
 # card KIND TITLE DETAIL — reads the option variables below
-yes_l=""; no_l=""; open_t=""; button_l=""; timeout_s=""; replace_id=""; print_id=0
+yes_l=""; no_l=""; open_t=""; button_l=""; timeout_s=""; replace_id=""; print_id=0; icon=""
 card() {
     local kind="$1" title="$2" detail="$3"
     local args=(-a notch -h "string:x-notch-kind:$kind")
     case "$kind" in fail) args+=(-u critical) ;; warn) args+=(-u normal) ;; *) args+=(-u low) ;; esac
     [ -n "$replace_id" ] && args+=(-r "$replace_id")
+    [ -n "$icon" ] && args+=(-i "$icon")
 
     # a question: buttons, wait for the answer, close it ourselves on timeout
     if [ -n "$yes_l$no_l" ]; then
@@ -146,6 +149,11 @@ print(d.get("hook_event_name", ""), (d.get("cwd") or "-").replace(" ", " "), m)
         *) kind=info; title="Claude · $project" ;;
     esac
     local args=(-a notch -h "string:x-notch-kind:$kind" -u normal)
+    # Claude's own mark when the Claude app is installed; otherwise the kind's.
+    local ic
+    for ic in /usr/share/icons/hicolor/*/apps/claude-desktop.png "$HOME"/.local/share/icons/hicolor/*/apps/claude-desktop.png; do
+        [ -e "$ic" ] && { args+=(-i claude-desktop); break; }
+    done
     if [ -n "$win" ]; then
         ( a="$(notify-send "${args[@]}" --wait -A "default=$(tr_ 'Ir al terminal' 'Go to terminal')" -- "$title" "$msg")"
           [ "$a" = default ] && niri msg action focus-window --id "$win" ) >/dev/null 2>&1 &
@@ -179,6 +187,7 @@ while [ $# -gt 0 ]; do
         --open) open_t="${2:-}"; shift ;;
         --button) button_l="${2:-}"; shift ;;
         -t|--timeout) timeout_s="${2:-}"; shift ;;
+        -i|--icon) icon="${2:-}"; shift ;;
         --replace) replace_id="${2:-}"; shift ;;
         --print-id) print_id=1 ;;
         --) shift; pos+=("$@"); break ;;
