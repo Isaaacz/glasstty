@@ -17,6 +17,7 @@ Scope {
     WallpaperFx {}      // wallpaper transitions, drawn here instead of by awww
     LockScreen {}       // lock screen with the thyx look (same theme as the SDDM login)
     IdleDim {}          // the screen fades to dark before the idle lock
+    NotifDrops {}       // notifications as drops falling out of the notch
     BatteryWatch {}     // low-battery warnings at 20, 10 and 5 %
     ExitScreen {}       // full-screen exit screen (Super+Shift+E, power key)
     Screenshot {}       // Print: GNOME-style capture screen

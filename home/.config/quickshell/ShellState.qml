@@ -1635,17 +1635,25 @@ Singleton {
             // A shell reload hands back the notifications it kept (keepOnReload)
             // through here again: they go back to the history, but the notch
             // must not announce them a second time.
-            if (!root.dnd && !n.lastGeneration) root.flash("notif", root.notifFlashMs(n));
+            if (!root.dnd && !n.lastGeneration) root.announce(n);
             // A card updated in place (`notch ... --replace ID`, notify-send -r)
             // keeps the same object: show it again with its new text.
             const again = function () {
                 if (root.dnd) return;
                 root.lastNotif = n;
-                root.flash("notif", root.notifFlashMs(n));
+                root.announce(n);
             };
             n.summaryChanged.connect(again);
             n.bodyChanged.connect(again);
         }
+    }
+
+    // How a new notification is shown: as a drop under the notch
+    // (NotifDrops.qml, the default) or inside the notch itself.
+    signal notifPopped(var n)
+    function announce(n) {
+        if (Config.notifStyle === "notch") root.flash("notif", root.notifFlashMs(n));
+        else root.notifPopped(n);
     }
 
     // drip-style cards (~/.local/bin/notch): the kind comes in the

@@ -87,7 +87,9 @@ A preview stays pinned while you change things.
 `notch` sends a card that drops out of the notch — green, amber, red or
 plain — for builds, deploys and coding agents (in the spirit of
 [drip](https://github.com/jrnxf/drip), which does this on a MacBook's notch).
-Cards also land in the Control Centre's history.
+Every notification drops out of the notch this way, up to three stacked
+under it, with a ring for the time left (hover to stop it, right click to put
+a card away). Cards also land in the Control Centre's history.
 
 ```bash
 notch ok "Build passed" "12 s"

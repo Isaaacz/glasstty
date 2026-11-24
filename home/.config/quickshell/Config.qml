@@ -38,6 +38,9 @@ Singleton {
     // "island" = floating pill detached from the edge (Dynamic Island).
     property alias notchStyle: opts.notchStyle
     property alias islandGap: opts.islandGap
+    // How notifications pop up: "drops" = cards that fall out of the notch and
+    // stack under it (NotifDrops.qml); "notch" = the notch itself stretches.
+    property alias notifStyle: opts.notifStyle
     readonly property bool island: opts.notchStyle === "island"
 
     property alias notchColor: opts.notchColor
@@ -460,6 +463,7 @@ Singleton {
 
             property string notchStyle: "notch"
             property int islandGap: 4
+            property string notifStyle: "drops"
             property string notchColor: "#000000"
             property bool barBlur: true
             property string iconTheme: ""

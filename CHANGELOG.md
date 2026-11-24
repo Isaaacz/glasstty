@@ -8,6 +8,11 @@
   a click action (`--open`), `notch run` for a command's result and duration,
   cards updated in place (`--replace`), and a Claude Code hook
   (`notch hook claude`). Inspired by jrnxf/drip.
+- **Notifications drop out of the notch:** every notification is its own
+  pill-shaped card that falls out of the notch; up to three stack below it
+  and the rest wait in a counter. A ring shows the time left, hovering stops
+  it, a right click puts the card away. Settings › System › Pop-up style
+  switches back to the notch stretching to show them.
 
 **Fixed**
 - Open GTK apps recolour with the wallpaper when the GTK theme setting is
