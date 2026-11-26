@@ -520,6 +520,7 @@ var pt = {
     "Volver a lo predeterminado": "Voltar ao padrão",
     "Devuelve las opciones de esta pestaña a como venían. Como el resto de Apariencia, se guarda con «Aplicar».": "Devolve as opções desta aba ao que eram de fábrica. Como o resto da Aparência, salva com «Aplicar».",
     "En el estilo Notch, el propio notch se estira para mostrar el aviso.": "No estilo Notch, o próprio notch se estica para mostrar o aviso.",
+    "ahora": "agora",
     "No molestar": "Não perturbe",
     "No molestar activado": "Não perturbe ativado",
     "No molestar desactivado": "Não perturbe desativado",

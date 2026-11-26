@@ -1625,6 +1625,7 @@ Singleton {
         onNotification: function (n) {
             n.tracked = true;               // stays in the history
             root.lastNotif = n;
+            if (!n.lastGeneration) root.stampNotif(n);
             // ...but the history has a ceiling. With Qt.callLater and not
             // directly: here the server's list does not include `n` yet (the
             // long why, with the measurement, is in trimNotifs), so calling it
@@ -1639,6 +1640,7 @@ Singleton {
             // A card updated in place (`notch ... --replace ID`, notify-send -r)
             // keeps the same object: show it again with its new text.
             const again = function () {
+                root.stampNotif(n);
                 if (root.dnd) return;
                 root.lastNotif = n;
                 root.announce(n);
@@ -1654,6 +1656,82 @@ Singleton {
     function announce(n) {
         if (Config.notifStyle === "notch") root.flash("notif", root.notifFlashMs(n));
         else root.notifPopped(n);
+    }
+
+    // ── how a notification looks, shared by the drops and the Control Centre ──
+    // The kind's colour (the drops can turn it off: Config.dropKindColors).
+    readonly property var kindColors: ({ ok: "#4ade80", warn: "#fbbf24", fail: "#f87171" })
+    function notifKindColor(kind) { return root.kindColors[kind] || Colors.accent; }
+    // A symbol instead of the icon for some notices: the screenshot ones get a
+    // camera (glasstty's notify-shot.sh asks for it with a hint; niri's own
+    // screenshot notice is recognised by its text).
+    readonly property var notifGlyphs: ({ camera: "󰄀" })
+    function notifGlyph(n) {
+        const h = n && n.hints ? String(n.hints["x-glasstty-glyph"] || "") : "";
+        if (root.notifGlyphs[h]) return root.notifGlyphs[h];
+        const t = n ? String(n.summary || "") : "";
+        if (t === "Screenshot captured" || t === "Failed to save screenshot") return root.notifGlyphs.camera;
+        return "";
+    }
+    // The picture to show: the one the notification brings, else its app's
+    // icon; "" when there is none (or the theme lacks it) or a symbol wins.
+    function notifImage(n) {
+        if (!n || root.notifGlyph(n) !== "") return "";
+        if (n.image && n.image.length > 0) return n.image;
+        const ic = n.appIcon || "";
+        if (ic === "") return "";
+        if (ic.startsWith("/")) return "file://" + ic;
+        if (ic.startsWith("file:")) return ic;
+        return Quickshell.iconPath(ic, true);
+    }
+    // The mark when there is no picture: the kind's, the symbol, or a bell.
+    function notifMark(n) {
+        const g = root.notifGlyph(n);
+        if (g !== "") return g;
+        const k = root.notifKind(n);
+        return k === "ok" ? "󰄬" : k === "warn" ? "󰀦" : k === "fail" ? "󰅖" : k === "info" ? "󰋽" : "󰂚";
+    }
+
+    // When each one arrived (or was last updated), by id, for "5 min" in the
+    // Control Centre. Ones handed back by a shell reload have no time.
+    property var notifTimes: ({})
+    function stampNotif(n) {
+        const t = Object.assign({}, root.notifTimes);
+        t[n.id] = Date.now();
+        root.notifTimes = t;
+    }
+    property real notifNow: Date.now()
+    Timer { interval: 30000; running: true; repeat: true; onTriggered: root.notifNow = Date.now() }
+    function notifAgo(n) {
+        const t = n ? root.notifTimes[n.id] : undefined;
+        if (!t) return "";
+        const s = Math.max(0, (root.notifNow - t) / 1000);
+        if (s < 60) return I18n.tr("ahora");
+        if (s < 3600) return I18n.tr("{0} min", Math.floor(s / 60));
+        if (s < 86400) return I18n.tr("{0} h", Math.floor(s / 3600));
+        return Qt.formatDate(new Date(t), "dd/MM");
+    }
+
+    // Identical notices (same app, title and text) are one row with a count:
+    // five "Claude is done" are not five things to read. The row is the newest.
+    function notifKey(n) { return (n.appName || "") + "\u0001" + (n.summary || "") + "\u0001" + (n.body || ""); }
+    readonly property var notifHeads: {
+        const seen = {}, out = [];
+        for (const n of root.notifications) {
+            const k = root.notifKey(n);
+            if (seen[k]) continue;
+            seen[k] = true;
+            out.push(n);
+        }
+        return out;
+    }
+    function notifDupes(n) {
+        const k = root.notifKey(n);
+        return root.notifications.filter(m => root.notifKey(m) === k);
+    }
+    function dismissGroup(n) {
+        const all = root.notifDupes(n);
+        for (let i = 0; i < all.length; i++) all[i].dismiss();
     }
 
     // drip-style cards (~/.local/bin/notch): the kind comes in the

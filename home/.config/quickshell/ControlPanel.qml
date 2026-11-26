@@ -435,7 +435,8 @@ Item {
                     // under a still pointer. Notifications are the same
                     // server objects while they live -> identity.
                     model: ScriptModel {
-                        values: ShellState.notifications
+                        // one row per group of identical notices (ShellState.notifHeads)
+                        values: ShellState.notifHeads
                         comparisonMode: ObjectComparison.Identity
                     }
                     boundsBehavior: Flickable.StopAtBounds
@@ -497,52 +498,114 @@ Item {
                         color: nrow.hovered ? Colors.fill2 : Colors.fill3
                         Behavior on color { ColorAnimation { duration: Appearance.mQuick; easing.type: Easing.OutQuad } }
 
+                        // what this row shows, worked out once
+                        readonly property var n: nrow.modelData
+                        readonly property string kind: ShellState.notifKind(nrow.n)
+                        readonly property color kindColor: ShellState.notifKindColor(nrow.kind)
+                        readonly property string pic: ShellState.notifImage(nrow.n)
+                        readonly property int dupes: ShellState.notifDupes(nrow.n).length
+                        readonly property bool crit: nrow.n.urgency === NotificationUrgency.Critical
+                        // `notch` cards and the shell's own notices say nothing with
+                        // their app name; real applications do.
+                        readonly property string app: (nrow.kind !== "" || nrow.n.appName === "notch") ? ""
+                            : (nrow.n.appName || "")
+                        readonly property string meta: [nrow.app, ShellState.notifAgo(nrow.n)]
+                            .filter(x => x !== "").join(" · ")
+
                         RowLayout {
                             anchors { fill: parent; leftMargin: 12; rightMargin: 10; topMargin: 10; bottomMargin: 10 }
                             spacing: 11
 
-                            Image {
-                                Layout.preferredWidth: 22
-                                Layout.preferredHeight: 22
+                            // icon: the picture (with the kind as a dot on its corner),
+                            // or a round mark in the kind's colour
+                            Item {
+                                Layout.preferredWidth: 30
+                                Layout.preferredHeight: 30
                                 Layout.alignment: Qt.AlignTop
-                                source: nrow.modelData.image && nrow.modelData.image.length > 0
-                                    ? nrow.modelData.image
-                                    : Quickshell.iconPath(nrow.modelData.appIcon, "dialog-information")
-                                sourceSize.width: 22; sourceSize.height: 22
-                                fillMode: Image.PreserveAspectFit
+                                Rectangle {
+                                    anchors.fill: parent
+                                    visible: nrow.pic === ""
+                                    radius: 15
+                                    color: Qt.rgba(nrow.kindColor.r, nrow.kindColor.g, nrow.kindColor.b, 0.20)
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: ShellState.notifMark(nrow.n)
+                                        color: nrow.kind !== "" ? nrow.kindColor : Colors.accentInk
+                                        font.family: Appearance.font; font.pixelSize: 16
+                                    }
+                                }
+                                Image {
+                                    anchors.fill: parent
+                                    visible: nrow.pic !== ""
+                                    source: nrow.pic
+                                    sourceSize.width: 60; sourceSize.height: 60
+                                    fillMode: Image.PreserveAspectFit
+                                    asynchronous: true
+                                }
+                                Rectangle {
+                                    visible: nrow.pic !== "" && nrow.kind !== ""
+                                    width: 11; height: 11; radius: 6
+                                    anchors { right: parent.right; bottom: parent.bottom; margins: -2 }
+                                    color: nrow.kindColor
+                                    border.width: 2
+                                    border.color: nrow.color
+                                }
                             }
 
                             ColumnLayout {
                                 id: ncol
                                 Layout.fillWidth: true
                                 spacing: 2
-                                Text {
+                                RowLayout {
                                     Layout.fillWidth: true
-                                    text: nrow.modelData.appName || ""
-                                    color: nrow.modelData.urgency === NotificationUrgency.Critical ? Colors.crit : Colors.label3
-                                    elide: Text.ElideRight
-                                    font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXXS
-                                    font.weight: Font.DemiBold
-                                }
-                                Text {
-                                    Layout.fillWidth: true
-                                    text: ShellState.tn(nrow.modelData.summary)
-                                    color: Colors.label
-                                    elide: Text.ElideRight
-                                    font.family: Appearance.fontUI; font.pixelSize: Appearance.fsS; font.weight: Font.Medium
+                                    spacing: 6
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: ShellState.tn(nrow.n.summary || nrow.n.appName || "")
+                                        color: nrow.crit ? Colors.crit : Colors.label
+                                        wrapMode: Text.Wrap
+                                        maximumLineCount: 2
+                                        elide: Text.ElideRight
+                                        font.family: Appearance.fontUI; font.pixelSize: Appearance.fsS; font.weight: Font.DemiBold
+                                    }
+                                    // ×5: five identical notices folded into this row
+                                    Rectangle {
+                                        visible: nrow.dupes > 1
+                                        Layout.alignment: Qt.AlignTop
+                                        implicitWidth: dupT.implicitWidth + 10
+                                        implicitHeight: 16
+                                        radius: 8
+                                        color: Colors.fill2
+                                        Text {
+                                            id: dupT
+                                            anchors.centerIn: parent
+                                            text: "×" + nrow.dupes
+                                            color: Colors.label2
+                                            font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXXS; font.weight: Font.DemiBold
+                                            font.features: ({ "tnum": 1 })
+                                        }
+                                    }
                                 }
                                 Text {
                                     Layout.fillWidth: true
                                     visible: text.length > 0
-                                    text: ShellState.tn(nrow.modelData.body)
+                                    text: ShellState.tn(nrow.n.body)
                                     color: Colors.label2
                                     wrapMode: Text.Wrap
-                                    maximumLineCount: 3
+                                    maximumLineCount: 2
                                     elide: Text.ElideRight
                                     textFormat: Text.StyledText
                                     font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXS
                                     lineHeight: Appearance.leading(Appearance.fsXS)
                                     lineHeightMode: Text.FixedHeight
+                                }
+                                Text {
+                                    Layout.fillWidth: true
+                                    visible: nrow.meta !== ""
+                                    text: nrow.meta
+                                    color: Colors.label3
+                                    elide: Text.ElideRight
+                                    font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXXS
                                 }
                             }
 
@@ -583,11 +646,12 @@ Item {
                         // indexAt() on this same list and the order is the same,
                         // but the range is checked because one may have expired
                         // between the hover and the click.
-                        const ns = ShellState.notifications;
+                        const ns = ShellState.notifHeads;
                         const n = (notifList.hoverIdx >= 0 && notifList.hoverIdx < ns.length)
                             ? ns[notifList.hoverIdx] : null;
                         if (!n) return;
-                        if (notifList.overClose) { ShellState.dismissNotif(n); return; }
+                        // the cross closes the whole group of identical ones
+                        if (notifList.overClose) { ShellState.dismissGroup(n); return; }
                         const acts = n.actions;
                         if (acts && acts.length > 0) { acts[0].invoke(); ShellState.closePanel(); }
                     }

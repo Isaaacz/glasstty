@@ -193,18 +193,6 @@ Scope {
         }
     }
 
-    // A symbol instead of the icon for some notices: the screenshot ones get a
-    // camera (glasstty's notify-shot.sh asks for it with a hint; niri's own
-    // screenshot notice is recognised by its text).
-    readonly property var glyphs: ({ camera: "󰄀" })
-    function glyphFor(n) {
-        const h = n && n.hints ? String(n.hints["x-glasstty-glyph"] || "") : "";
-        if (root.glyphs[h]) return root.glyphs[h];
-        const t = n ? String(n.summary || "") : "";
-        if (t === "Screenshot captured" || t === "Failed to save screenshot") return root.glyphs.camera;
-        return "";
-    }
-
     // The card's colour: the notch's (a drop looks like a piece of it), black,
     // or the theme's background; with the opacity on top.
     readonly property color baseColor: Config.dropColor === "black" ? "#000000"
@@ -231,23 +219,18 @@ Scope {
             property string kind: ""
             property var buttons: []
             property bool critical: false
-            property string glyph: ""
+            property string mark: "󰂚"
 
             function readN() {
                 if (!card.n) return;
                 card.title = ShellState.tn(card.n.summary || card.n.appName || "");
                 card.body = ShellState.tn(card.n.body || "");
                 card.appName = card.n.appName || "";
-                card.image = (card.n.image && card.n.image.length > 0) ? card.n.image
-                    : !card.n.appIcon ? ""
-                    : card.n.appIcon.startsWith("/") ? "file://" + card.n.appIcon
-                    : card.n.appIcon.startsWith("file:") ? card.n.appIcon
-                    : Quickshell.iconPath(card.n.appIcon, true);   // "" when the theme lacks it
+                card.image = ShellState.notifImage(card.n);
                 card.kind = ShellState.notifKind(card.n);
                 card.buttons = ShellState.notifButtons(card.n).slice(0, 3);
                 card.critical = card.n.urgency === NotificationUrgency.Critical;
-                card.glyph = root.glyphFor(card.n);
-                if (card.glyph !== "") card.image = "";
+                card.mark = ShellState.notifMark(card.n);
             }
             function refresh() {
                 card.readN();
@@ -266,9 +249,7 @@ Scope {
                 goneTimer.start();
             }
 
-            readonly property color kindColor: !Config.dropKindColors ? Colors.accent
-                : kind === "ok" ? "#4ade80" : kind === "warn" ? "#fbbf24"
-                : kind === "fail" ? "#f87171" : Colors.accent
+            readonly property color kindColor: Config.dropKindColors ? ShellState.notifKindColor(kind) : Colors.accent
 
             readonly property color ink: root.ink
             readonly property bool showBody: Config.dropBody && body.length > 0
@@ -391,9 +372,7 @@ Scope {
                         color: card.kind !== "" ? card.kindColor : Colors.accent
                         Text {
                             anchors.centerIn: parent
-                            text: card.glyph !== "" ? card.glyph
-                                : card.kind === "ok" ? "󰄬" : card.kind === "warn" ? "󰀦"
-                                : card.kind === "fail" ? "󰅖" : card.kind === "info" ? "󰋽" : "󰂚"
+                            text: card.mark
                             color: "#101010"
                             font.family: Appearance.font; font.pixelSize: Math.round(root.iconSz * 0.58)
                         }

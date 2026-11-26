@@ -532,6 +532,7 @@ var en = {
     "Volver a lo predeterminado": "Back to the defaults",
     "Devuelve las opciones de esta pestaña a como venían. Como el resto de Apariencia, se guarda con «Aplicar».": "Puts this tab's options back as they came. Like the rest of Appearance, it is kept with “Apply”.",
     "En el estilo Notch, el propio notch se estira para mostrar el aviso.": "In the Notch style, the notch itself stretches to show the pop-up.",
+    "ahora": "now",
     "No molestar": "Do not disturb",
     "No molestar activado": "Do not disturb on",
     "No molestar desactivado": "Do not disturb off",
