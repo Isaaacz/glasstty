@@ -27,6 +27,9 @@ jobs:
       - name: Install and uninstall in a throwaway HOME
         run: tests/sandbox-install.sh
 
+      - name: IPC watchdog against stand-ins
+        run: tests/ipc-watchdog-test.sh
+
       - name: Python syntax
         run: |
           { git ls-files '*.py'

@@ -6,6 +6,7 @@
 // face of the notch (OverviewPanel.qml), so it is no longer a separate window
 // and is not instantiated here. Its shortcut, Super+Tab, has not changed.
 import Quickshell
+import QtQml
 
 Scope {
     id: root
@@ -21,4 +22,9 @@ Scope {
     BatteryWatch {}     // low-battery warnings at 20, 10 and 5 %
     ExitScreen {}       // full-screen exit screen (Super+Shift+E, power key)
     Screenshot {}       // Print: GNOME-style capture screen
+
+    // Restarts the shell if a hot reload ever leaves its IPC stuck on "Not
+    // ready" (shortcuts, dim and lock all go through it). One copy at a time:
+    // the script exits at once when another is running. See the script.
+    Component.onCompleted: Quickshell.execDetached(["sh", Quickshell.shellPath("scripts/ipc-watchdog.sh")])
 }
