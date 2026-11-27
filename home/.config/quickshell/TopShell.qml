@@ -113,7 +113,7 @@ Scope {
         // These mirror the GlobalShortcuts above. Under niri there is no
         // global-shortcut protocol: config.kdl binds keys to
         // `qs ipc call notch <function>` instead.
-        function actions(): void { ShellState.openLauncher("cmd"); }
+        function actions(): void { Launcher.openLauncher("cmd"); }
         function calendar(): void { ShellState.togglePanel("calendar"); }
         function bar(): void { root.shown = !root.shown; }
         function control(): void { ShellState.togglePanel("control"); }
@@ -143,9 +143,9 @@ Scope {
         // Anything else lands in "apps", which is the usual door.
         function open(mode: string): void {
             const ok = ["apps", "clip", "cmd", "win"];
-            ShellState.openLauncher(ok.indexOf(mode) >= 0 ? mode : "apps");
+            Launcher.openLauncher(ok.indexOf(mode) >= 0 ? mode : "apps");
         }
-        function clipboard(): void { ShellState.openLauncher("clip"); }
+        function clipboard(): void { Launcher.openLauncher("clip"); }
         function overview(): void { ShellState.togglePanel("overview"); }
         function stage(): void { ShellState.toggleStage(); }
         function close(): void { ShellState.closePanel(); }

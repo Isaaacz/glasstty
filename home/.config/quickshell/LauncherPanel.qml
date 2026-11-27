@@ -57,8 +57,8 @@ Item {
     // from outside: Super+Shift+V opens straight into the clipboard, and the
     // "Portapapeles" (Clipboard) action of the ">" mode jumps to the "#" mode
     // without closing the panel.
-    readonly property string mode: ShellState.launcherMode
-    readonly property var modeInfo: ShellState.launcherModeInfo(root.mode)
+    readonly property string mode: Launcher.launcherMode
+    readonly property var modeInfo: Launcher.launcherModeInfo(root.mode)
     readonly property bool isApps: root.mode === "apps"
 
     property var results: []
@@ -119,7 +119,7 @@ Item {
     readonly property bool favVisible: root.isApps && field.text.length === 0
                                        && root.favShown.length > 0
 
-    function syncFavs() { if (root.favDrag < 0) root.favShown = ShellState.favApps; }
+    function syncFavs() { if (root.favDrag < 0) root.favShown = Launcher.favApps; }
 
     // The three hints on the right: only with the field empty in applications
     // mode. It is the only sign that the modes exist, and that is why it is
@@ -129,7 +129,7 @@ Item {
                                          && root.favHover.length === 0
 
     Connections {
-        target: ShellState
+        target: Launcher
 
         function onFavAppsChanged() {
             root.syncFavs();
@@ -186,8 +186,8 @@ Item {
     // ALWAYS (it costs hundredths of a second and an out-of-date copy list is no
     // use at all); ShellState already ignores the request if one is in flight.
     function enterMode() {
-        if (root.mode === "clip") ShellState.clipRefresh();
-        else if (root.mode === "win") ShellState.winRefresh();
+        if (root.mode === "clip") Launcher.clipRefresh();
+        else if (root.mode === "win") Launcher.winRefresh();
         root.refresh();
     }
 
@@ -195,14 +195,14 @@ Item {
         root.mouseNav = false;
         // Outside applications mode there are no sums or durations: "2+2" in
         // the clipboard is text to search for, not an addition.
-        root.calc = root.isApps ? ShellState.calcEval(field.text) : null;
+        root.calc = root.isApps ? Launcher.calcEval(field.text) : null;
         root.timerSec = root.isApps ? ShellState.parseDuration(field.text) : -1;
 
         switch (root.mode) {
-        case "clip": root.results = ShellState.searchClip(field.text); break;
-        case "cmd":  root.results = ShellState.searchActions(field.text); break;
-        case "win":  root.results = ShellState.searchWins(field.text); break;
-        default:     root.results = ShellState.searchApps(field.text); break;
+        case "clip": root.results = Launcher.searchClip(field.text); break;
+        case "cmd":  root.results = Launcher.searchActions(field.text); break;
+        case "win":  root.results = Launcher.searchWins(field.text); break;
+        default:     root.results = Launcher.searchApps(field.text); break;
         }
 
         root.calcSelected = root.hasSpecial;
@@ -227,7 +227,7 @@ Item {
     // resultados" (No results) and would jump downwards when the data arrived.
     // The maximum is requested and it shrinks, which is its usual gesture and
     // also happens inside the opening animation.
-    readonly property bool waiting: root.mode === "clip" && ShellState.clipLoading
+    readonly property bool waiting: root.mode === "clip" && Launcher.clipLoading
                                     && root.results.length === 0
 
     function jump(i) {
@@ -247,17 +247,17 @@ Item {
             return;
         }
         if (root.calcSelected && root.hasCalc) {
-            ShellState.copyText(ShellState.calcFormat(root.calc));
+            Launcher.copyText(Launcher.calcFormat(root.calc));
             ShellState.closePanel();
             return;
         }
         if (list.currentIndex < 0 || list.currentIndex >= root.results.length) return;
         const it = root.results[list.currentIndex];
         switch (root.mode) {
-        case "clip": ShellState.clipCopy(it); break;
-        case "cmd":  ShellState.runAction(it); break;
-        case "win":  ShellState.focusWindow(it); break;
-        default:     ShellState.launchApp(it); break;
+        case "clip": Launcher.clipCopy(it); break;
+        case "cmd":  Launcher.runAction(it); break;
+        case "win":  Launcher.focusWindow(it); break;
+        default:     Launcher.launchApp(it); break;
         }
     }
 
@@ -269,8 +269,8 @@ Item {
         if (root.mode !== "clip") return;
         if (list.currentIndex < 0 || list.currentIndex >= root.results.length) return;
         const i = list.currentIndex;
-        ShellState.clipDelete(root.results[i]);
-        root.results = ShellState.searchClip(field.text);
+        Launcher.clipDelete(root.results[i]);
+        root.results = Launcher.searchClip(field.text);
         ShellState.launcherRows = root.results.length;
         // Stay where it was, do not go back to the top: deleting three in a row
         // is a normal gesture, and jumping to the start after each one prevents it.
@@ -397,10 +397,10 @@ Item {
                     // that it also works when pasting ("#factura" pastes and enters
                     // the clipboard searching for "factura").
                     if (root.isApps && field.text.length > 0) {
-                        const m = ShellState.launcherModeOf(field.text.charAt(0));
+                        const m = Launcher.launcherModeOf(field.text.charAt(0));
                         if (m !== "") {
                             const rest = field.text.slice(1);
-                            ShellState.launcherMode = m;   // empties the field and refreshes
+                            Launcher.launcherMode = m;   // empties the field and refreshes
                             field.text = rest;             // what came after is kept
                             return;
                         }
@@ -420,7 +420,7 @@ Item {
                     // the way out the hand finds by itself: if the prefix was
                     // erased when typed, carrying on erasing has to undo it.
                     if (e.key === Qt.Key_Backspace && !root.isApps && field.text.length === 0) {
-                        ShellState.launcherMode = "apps";
+                        Launcher.launcherMode = "apps";
                         e.accepted = true;
                         return;
                     }
@@ -435,7 +435,7 @@ Item {
                         // Ctrl+D pins or unpins whatever you have selected, without the mouse.
                         else if (e.key === Qt.Key_D && root.isApps) {
                             if (!root.calcSelected && list.currentIndex >= 0 && list.currentIndex < root.results.length)
-                                ShellState.toggleFav(root.results[list.currentIndex]);
+                                Launcher.toggleFav(root.results[list.currentIndex]);
                             e.accepted = true;
                         }
                         // Ctrl+1..9 launches favourite N. It is the reason the
@@ -443,7 +443,7 @@ Item {
                         // becomes a shortcut your fingers learn.
                         else if (root.isApps && e.key >= Qt.Key_1 && e.key <= Qt.Key_9) {
                             const n = e.key - Qt.Key_1;
-                            if (n < ShellState.favApps.length) ShellState.launchApp(ShellState.favApps[n]);
+                            if (n < Launcher.favApps.length) Launcher.launchApp(Launcher.favApps[n]);
                             e.accepted = true;
                         }
                     } else if (e.key === Qt.Key_Home) { root.jump(0); e.accepted = true; }
@@ -476,7 +476,7 @@ Item {
                 visible: root.hintsVisible
                 spacing: 12
                 Repeater {
-                    model: ShellState.launcherModes
+                    model: Launcher.launcherModes
                     RowLayout {
                         required property var modelData
                         spacing: 4
@@ -629,11 +629,11 @@ Item {
                             const from = root.favDrag;
                             const to = root.favSlot;
                             // Clean up BEFORE touching Config: committing changes
-                            // ShellState.favApps, and syncFavs() only repaints if
+                            // Launcher.favApps, and syncFavs() only repaints if
                             // there is no longer a drag in progress.
                             root.favDrag = -1; root.favMoving = false; root.favSlot = -1;
                             if (moved) { if (to >= 0) ShellState.moveFav(from, to); }
-                            else ShellState.launchApp(favCell.modelData);
+                            else Launcher.launchApp(favCell.modelData);
                         }
 
                         onCanceled: { root.favDrag = -1; root.favMoving = false; root.favSlot = -1; }
@@ -641,7 +641,7 @@ Item {
                         onClicked: function (m) {
                             // The left one is handled by onReleased, which is the
                             // one that can tell a click from a drag.
-                            if (m.button === Qt.RightButton) ShellState.toggleFav(favCell.modelData);
+                            if (m.button === Qt.RightButton) Launcher.toggleFav(favCell.modelData);
                         }
                     }
                 }
@@ -704,7 +704,7 @@ Item {
                     Text {
                         Layout.fillWidth: true
                         text: root.hasTimer ? ShellState.timerClock(root.timerSec)
-                                            : ShellState.calcFormat(root.calc)
+                                            : Launcher.calcFormat(root.calc)
                         color: Colors.label; elide: Text.ElideRight
                         font.family: Appearance.fontUI; font.pixelSize: 19; font.weight: Font.DemiBold
                         font.features: ({ "tnum": 1 })
@@ -732,7 +732,7 @@ Item {
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
                     if (root.hasTimer) ShellState.timerStart(root.timerSec);
-                    else ShellState.copyText(ShellState.calcFormat(root.calc));
+                    else Launcher.copyText(Launcher.calcFormat(root.calc));
                     ShellState.closePanel();
                 }
             }
@@ -856,8 +856,8 @@ Item {
             required property var modelData
 
             onActivated: function (button) {
-                if (button === Qt.RightButton) ShellState.toggleFav(appRow.modelData);
-                else ShellState.launchApp(appRow.modelData);
+                if (button === Qt.RightButton) Launcher.toggleFav(appRow.modelData);
+                else Launcher.launchApp(appRow.modelData);
             }
 
             RowLayout {
@@ -900,9 +900,9 @@ Item {
                 // hover. That way an ordinary row carries no noise, but the way
                 // to pin it is always one click away.
                 Text {
-                    visible: ShellState.isFav(appRow.modelData) || starMa.containsMouse || appRow.hovered
-                    text: ShellState.isFav(appRow.modelData) ? Icons.star : Icons.starOff
-                    color: ShellState.isFav(appRow.modelData) ? Colors.accent2Ink
+                    visible: Launcher.isFav(appRow.modelData) || starMa.containsMouse || appRow.hovered
+                    text: Launcher.isFav(appRow.modelData) ? Icons.star : Icons.starOff
+                    color: Launcher.isFav(appRow.modelData) ? Colors.accent2Ink
                          : starMa.containsMouse ? Colors.label : Colors.label4
                     font.family: Appearance.font
                     font.pixelSize: 14
@@ -914,7 +914,7 @@ Item {
                         anchors.margins: -7      // comfortable click zone without enlarging the icon
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: ShellState.toggleFav(appRow.modelData)
+                        onClicked: Launcher.toggleFav(appRow.modelData)
                     }
                 }
 
@@ -935,7 +935,7 @@ Item {
                 // The right one deletes, just as in the applications row the
                 // right one is "this row's secondary action".
                 if (button === Qt.RightButton) { list.currentIndex = clipRow.index; root.deleteCurrent(); }
-                else ShellState.clipCopy(clipRow.modelData);
+                else Launcher.clipCopy(clipRow.modelData);
             }
 
             RowLayout {
@@ -1031,7 +1031,7 @@ Item {
             id: cmdRow
             required property var modelData
 
-            onActivated: ShellState.runAction(cmdRow.modelData)
+            onActivated: Launcher.runAction(cmdRow.modelData)
 
             RowLayout {
                 anchors { fill: parent; leftMargin: 16; rightMargin: 14 }
@@ -1082,7 +1082,7 @@ Item {
             id: winRow
             required property var modelData
 
-            onActivated: ShellState.focusWindow(winRow.modelData)
+            onActivated: Launcher.focusWindow(winRow.modelData)
 
             RowLayout {
                 anchors { fill: parent; leftMargin: 12; rightMargin: 14 }

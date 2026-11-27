@@ -309,7 +309,7 @@ Item {
                             // music.
                             if (!ShellState.player) {
                                 if (transport.index === 1 && ShellState.ultimaApp)
-                                    ShellState.launchApp(ShellState.ultimaApp);
+                                    Launcher.launchApp(ShellState.ultimaApp);
                                 return;
                             }
                             if (transport.index === 0) ShellState.player.previous();

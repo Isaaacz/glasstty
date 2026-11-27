@@ -126,7 +126,7 @@ Scope {
     // no second list.
 
     // The same door, but for whoever does not have this window's id: the command
-    // menu (ShellState.runAction) and `qs ipc call notch keys`.
+    // menu (Launcher.runAction) and `qs ipc call notch keys`.
     Connections {
         target: ShellState
         function onSettingsSection(id) { root.openAt(id); }

@@ -818,13 +818,13 @@ Item {
             spacing: 11
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: ShellState.toastIcon
+                text: Launcher.toastIcon
                 color: Colors.accentInk
                 font.family: Appearance.font; font.pixelSize: 17
             }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: ShellState.toastText
+                text: Launcher.toastText
                 color: Colors.label
                 font.family: Appearance.fontUI; font.pixelSize: Appearance.fsM; font.weight: Font.Medium
             }
