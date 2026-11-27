@@ -38,6 +38,10 @@ Singleton {
     // Control Centre page to open on (0 painel, 1 wallpapers, 2 sistema);
     // read and reset by ControlPanel when it opens. See `notch controlPage`.
     property int controlPage: 0
+    // Extra of the Sistema page to open on (its file name without .qml, from
+    // ~/.local/share/glasstty/extras/); read and reset by ControlPanel. See
+    // `notch extra`.
+    property string controlExtra: ""
     property string panel: ""     // "" | "control" | "system" | "launcher" | "power" | "network" | "bluetooth" | "overview" | "calendar" | "github"
     readonly property bool open: panel !== ""
 

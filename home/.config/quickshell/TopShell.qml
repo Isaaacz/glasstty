@@ -122,6 +122,12 @@ Scope {
             ShellState.controlPage = Math.max(0, Math.min(4, n));
             if (ShellState.panel !== "control") ShellState.togglePanel("control");
         }
+        // The Control Centre straight on an extra of the Sistema page: a QML
+        // file in ~/.local/share/glasstty/extras/, named without ".qml".
+        function extra(name: string): void {
+            ShellState.controlExtra = name;
+            if (ShellState.panel !== "control") ShellState.togglePanel("control");
+        }
         // The power menu is now the full-screen ExitScreen.qml.
         function power(): void { ShellState.closePanel(); Quickshell.execDetached(["qs", "ipc", "call", "exit", "toggle"]); }
         function network(): void { ShellState.togglePanel("network"); }

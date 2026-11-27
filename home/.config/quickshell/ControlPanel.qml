@@ -11,6 +11,7 @@ import Quickshell.Widgets
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import Qt.labs.folderlistmodel
 
 import Quickshell.Services.Pipewire
 
@@ -22,13 +23,15 @@ import Quickshell.Services.Pipewire
 
 Item {
     id: root
-    property int page: 0                 // 0 painel · 1 wallpapers · 2 sistema · 3 cores · 4 rices
+    property int page: 0                 // 0 painel · 1 wallpapers · 2 sistema · 3 cores · 4 rices · 5 an extra of sistema
+    property int extra: 0                // which extra page 5 shows (index in extrasModel)
     readonly property bool opened: ShellState.panel === "control"
     property bool powerDrawer: false
     // Which channel the right rail's vertical slider drives.
     property string rail: ShellState.bright >= 0 ? "bright" : "vol"
     onOpenedChanged: if (opened) {
         root.page = ShellState.controlPage; ShellState.controlPage = 0;
+        if (ShellState.controlExtra !== "") { root.openExtra(ShellState.controlExtra); ShellState.controlExtra = ""; }
         root.powerDrawer = false;
         root.rail = ShellState.bright >= 0 ? "bright" : "vol";
     }
@@ -36,10 +39,23 @@ Item {
     Connections {
         target: ShellState
         function onControlGo(n) { root.page = Math.max(0, Math.min(4, n)); }
+        function onControlExtraChanged() {
+            if (root.opened && ShellState.controlExtra !== "") {
+                root.openExtra(ShellState.controlExtra);
+                ShellState.controlExtra = "";
+            }
+        }
     }
 
     // swallows clicks on the gaps so they do not close the panel
     MouseArea { anchors.fill: parent }
+
+    function openExtra(name) {
+        for (let i = 0; i < extrasModel.count; i++) {
+            if (extrasModel.get(i, "fileBaseName") === name) { root.extra = i; root.page = 5; return; }
+        }
+        root.page = 2;
+    }
 
     readonly property var mic: Pipewire.defaultAudioSource
     PwObjectTracker { objects: [root.mic] }
@@ -111,7 +127,7 @@ Item {
             spacing: 8
             RailButton { icon: "󰕮"; active: root.page === 0; onChosen: root.page = 0 }      // painel
             RailButton { icon: "󰸉"; active: root.page === 1; onChosen: root.page = 1 }      // wallpapers
-            RailButton { icon: "󰓅"; active: root.page === 2; onChosen: root.page = 2 }      // sistema
+            RailButton { icon: "󰓅"; active: root.page === 2 || root.page === 5; onChosen: root.page = 2 }      // sistema (and its extras)
             RailButton { icon: "󰏘"; active: root.page === 3; onChosen: root.page = 3 }      // cores
             RailButton { icon: "󰃣"; active: root.page === 4; onChosen: root.page = 4 }      // rices
             Item { Layout.fillHeight: true }
@@ -932,6 +948,79 @@ Item {
                         onClicked: ShellState.togglePanel("github")
                     }
                 }
+
+                // Extras: one more door per QML file in
+                // ~/.local/share/glasstty/extras/ (page 5 below). The extra
+                // gives the words (`title`, `subtitle`) and whether it wants a
+                // look (`attention`); the door has the same shape as the two
+                // above so it does not look bolted on.
+                Repeater {
+                    model: extraLoaders.count
+                    Rectangle {
+                        id: extraDoor
+                        required property int index
+                        readonly property var ext: {
+                            extraLoaders.count;
+                            const l = extraLoaders.itemAt(extraDoor.index);
+                            return l && l.status === Loader.Ready ? l.item : null;
+                        }
+                        visible: extraDoor.ext !== null
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 42
+                        radius: 13
+                        color: extraMa.containsMouse
+                            ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.14)
+                            : Colors.fill3
+                        border.width: 1
+                        border.color: extraMa.containsMouse
+                            ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.26)
+                            : Colors.hairline
+                        Behavior on color { ColorAnimation { duration: Appearance.mQuick; easing.type: Easing.OutQuad } }
+
+                        RowLayout {
+                            anchors { fill: parent; leftMargin: 12; rightMargin: 10 }
+                            spacing: 8
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 0
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: extraDoor.ext ? String(extraDoor.ext.title || "") : ""
+                                    color: extraMa.containsMouse ? Colors.accentInk : Colors.label
+                                    elide: Text.ElideRight
+                                    font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXXS
+                                    font.weight: Font.DemiBold
+                                }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: extraDoor.ext ? String(extraDoor.ext.subtitle || "") : ""
+                                    color: Colors.label3
+                                    elide: Text.ElideRight
+                                    font.family: Appearance.fontUI; font.pixelSize: 8
+                                    font.features: ({ "tnum": 1 })
+                                }
+                            }
+                            Rectangle {
+                                visible: extraDoor.ext ? extraDoor.ext.attention === true : false
+                                implicitWidth: 7; implicitHeight: 7; radius: 3.5
+                                color: Colors.warn
+                            }
+                            Text {
+                                text: "›"
+                                color: extraMa.containsMouse ? Colors.accentInk : Colors.label3
+                                font.family: Appearance.fontUI; font.pixelSize: 20
+                            }
+                        }
+
+                        MouseArea {
+                            id: extraMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: { root.extra = extraDoor.index; root.page = 5; }
+                        }
+                    }
+                }
             }
                 Item { Layout.fillHeight: true }
             }
@@ -1320,6 +1409,56 @@ Item {
 
             // ── 4: rices (save / switch looks; see RicesPage.qml) ──
             RicesPage {}
+
+            // ── 5: an extra of sistema ──
+            // Each QML file in ~/.local/share/glasstty/extras/ is a page of its
+            // own, reached from its door in Sistema (or `notch extra NAME`).
+            // Outside the repository on purpose: they are the user's own
+            // add-ons. The file's root Item may declare `title`, `subtitle`
+            // (the door's words), `attention` (a dot on the door) and
+            // `property var host`, which it gets with the theme tokens, whether
+            // it is `shown`, `back()` to Sistema and `close()`. Loaded once and
+            // kept, so an extra can keep sampling while it is not on screen.
+            StackLayout {
+                currentIndex: root.extra
+                Repeater {
+                    id: extraLoaders
+                    model: FolderListModel {
+                        id: extrasModel
+                        folder: "file://" + Quickshell.env("HOME") + "/.local/share/glasstty/extras"
+                        nameFilters: ["*.qml"]
+                        showDirs: false
+                        sortField: FolderListModel.Name
+                    }
+                    Loader {
+                        id: extraLoader
+                        required property int index
+                        required property url fileUrl
+                        readonly property QtObject host: QtObject {
+                            readonly property bool shown: root.opened && root.page === 5 && root.extra === extraLoader.index
+                            readonly property color bg: Colors.bg
+                            readonly property color accent: Colors.accent
+                            readonly property color accentInk: Colors.accentInk
+                            readonly property color label: Colors.label
+                            readonly property color label2: Colors.label2
+                            readonly property color label3: Colors.label3
+                            readonly property color fill1: Colors.fill1
+                            readonly property color fill2: Colors.fill2
+                            readonly property color fill3: Colors.fill3
+                            readonly property color hairline: Colors.hairline
+                            readonly property color surface1: Colors.surface1
+                            readonly property color ok: Colors.ok
+                            readonly property color warn: Colors.warn
+                            readonly property color crit: Colors.crit
+                            readonly property string fontUI: Appearance.fontUI
+                            readonly property string fontIcon: Appearance.font
+                            function back() { root.page = 2; }
+                            function close() { ShellState.closePanel(); }
+                        }
+                        Component.onCompleted: extraLoader.setSource(extraLoader.fileUrl, { host: extraLoader.host })
+                    }
+                }
+            }
         }
 
         Rectangle { Layout.fillHeight: true; width: 1; color: Colors.hairline }
