@@ -51,3 +51,17 @@ jobs:
         run: dnf install -y --setopt=install_weak_deps=False niri
       - name: niri validate
         run: niri validate -c home/.config/niri/config.kdl
+
+  qml:
+    name: qml (lint and load)
+    runs-on: ubuntu-latest
+    # Arch packages Quickshell itself; Fedora only has it in a COPR.
+    container: archlinux:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Quickshell, qmllint and a headless sway
+        run: pacman -Syu --noconfirm --needed quickshell qt6-declarative qt6-multimedia sway python
+      - name: qmllint (runtime errors only)
+        run: tests/qml-check.sh lint
+      - name: The shell loads in a headless sway
+        run: tests/qml-check.sh load

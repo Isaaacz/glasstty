@@ -13,6 +13,18 @@ runs it on every push; run it locally the same way:
 tests/sandbox-install.sh
 ```
 
+`tests/qml-check.sh` checks the QML before it reaches a live session: qmllint
+over every file, failing only on what breaks at runtime (syntax errors,
+imports that do not resolve, names that exist nowhere, members missing from
+glasstty's own types such as `ShellState.typo`), and then the whole shell
+started by Quickshell in a headless sway, which must reach
+`Configuration Loaded` without a `ReferenceError`. CI runs it in an Arch Linux
+container; on Fedora, run it the same way with podman, away from your session:
+
+```bash
+podman run --rm -v "$PWD:/repo:ro,Z" archlinux:latest bash -c 'pacman -Syu --noconfirm --needed quickshell qt6-declarative qt6-multimedia sway python >/dev/null && /repo/tests/qml-check.sh'
+```
+
 ## In a virtual machine (done for v1.1)
 
 The installer was run on a fresh **Fedora 45 Cloud** image under QEMU/KVM
