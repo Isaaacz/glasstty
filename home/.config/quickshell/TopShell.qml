@@ -213,6 +213,21 @@ Scope {
             // On the others the bar and the notch are still there, but at rest.
             readonly property bool primary: modelData.name === ShellState.focusedMon
 
+            // ── the bar's layout (Settings › Appearance › Bar) ──
+            // Each module sits in a SLOT of the left or the right group, in the
+            // order of Config.barLeft / Config.barRight; a module in neither list
+            // is parked out of sight. The modules keep their own code (and ids)
+            // and only change parent, so the workspace fluid is untouched.
+            function slotFor(key) {
+                leftSlots.count; rightSlots.count;      // re-evaluate when the slots exist
+                const l = Config.barLeft.indexOf(key);
+                if (l >= 0 && l < leftSlots.count) return leftSlots.itemAt(l) || barPark;
+                const r = Config.barRight.indexOf(key);
+                if (r >= 0 && r < rightSlots.count) return rightSlots.itemAt(r) || barPark;
+                return barPark;
+            }
+            function shows(key) { return Config.barLeft.indexOf(key) >= 0 || Config.barRight.indexOf(key) >= 0; }
+
             // Glass only while this screen's workspace has windows: on a bare
             // desktop the band and the notch go back to clean wallpaper / solid.
             readonly property bool glass: root.glassAllowed && Compositor.outputHasWindows(modelData.name)
@@ -370,14 +385,25 @@ Scope {
                 }
 
                 // ══════════════ barra: izquierda ══════════════
+                // modules not on the bar wait here
+                Item { id: barPark; visible: false }
+
                 RowLayout {
                     id: leftGroup
                     anchors { left: parent.left; leftMargin: root.sideMargin; top: parent.top }
                     height: root.barH
-                    spacing: 2
+                    spacing: 0
+
+                    Repeater {
+                        id: leftSlots
+                        model: 8
+                        BarSlot { barH: root.barH }
+                    }
 
                     BarItem {
-                        visible: Config.showArch
+                        parent: win.slotFor("logo")
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: win.shows("logo") && Config.showArch
                         icon: Icons.arch
                         iconSize: Appearance.fsL
                         iconColor: Colors.accent
@@ -400,9 +426,12 @@ Scope {
                     // pill from travelling: the floor moved under its feet).
                     Item {
                         id: wsGroup
-                        visible: Config.showWorkspaces
-                        Layout.alignment: Qt.AlignVCenter
-                        Layout.leftMargin: 0
+                        parent: win.slotFor("workspaces")
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: win.shows("workspaces") && Config.showWorkspaces
+                        // Settings › Appearance › Bar › Workspace style: the
+                        // fluid dots, or numbers / roman / pills / app icons.
+                        readonly property bool fluid: Config.wsStyle === "dots" || Config.wsStyle === ""
                         property int hovered: -1        // which dot the mouse points at
                         // The pill is narrower and the dots further apart than
                         // before, and it is not aesthetics: it is what makes the
@@ -414,11 +443,12 @@ Scope {
                         // arrives.
                         readonly property int pill: 18
                         readonly property int pad: (pill - 8) / 2   // how far the pill sticks out at the ends
-                        implicitWidth: wsRow.implicitWidth + pill - 8
-                        implicitHeight: 8
+                        implicitWidth: wsGroup.fluid ? wsRow.implicitWidth + pill - 8 : wsAlt.implicitWidth
+                        implicitHeight: wsGroup.fluid ? 8 : 20
 
                         Row {
                             id: wsRow
+                            visible: wsGroup.fluid
                             x: wsGroup.pad
                             anchors.verticalCenter: parent.verticalCenter
                             spacing: 12
@@ -652,6 +682,7 @@ Scope {
                         // this the bar can stay without a surface of its own and
                         // still read on any background.
                         MultiEffect {
+                            visible: wsGroup.fluid
                             anchors.fill: liquid
                             source: liquid
                             shadowEnabled: true
@@ -708,11 +739,116 @@ Scope {
                             property color dotColor: Colors.onWallDim
                             property color pillColor: Colors.onWallAccent
                         }
+
+                        // The other styles: one label per workspace, the active
+                        // one on an accent pill that slides between them.
+                        Item {
+                            id: wsAlt
+                            visible: !wsGroup.fluid
+                            anchors.verticalCenter: parent.verticalCenter
+                            implicitWidth: altRow.implicitWidth
+                            implicitHeight: 20
+                            width: implicitWidth; height: 20
+
+                            readonly property var romans: ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
+                                "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX"]
+                            // the glyph of the app focused on a workspace (style "icons")
+                            readonly property var appGlyphs: [
+                                ["firefox", "󰈹"], ["zen", "󰈹"], ["librewolf", "󰈹"], ["chrom", "󰊯"], ["brave", "󰊯"],
+                                ["kitty", ""], ["alacritty", ""], ["foot", ""], ["ghostty", ""], ["terminal", ""],
+                                ["code", "󰨞"], ["nautilus", "󰉋"], ["files", "󰉋"], ["spotify", "󰓇"], ["discord", "󰙯"],
+                                ["vesktop", "󰙯"], ["steam", "󰓓"], ["telegram", ""], ["obsidian", "󰠮"], ["gimp", ""],
+                                ["claude", "󰚩"], ["mpv", "󰐊"], ["vlc", "󰕼"], ["libreoffice", "󰈙"], ["thunderbird", "󰇮"]]
+                            function glyphOf(ws) {
+                                const tls = Compositor.toplevels || [];
+                                let app = "";
+                                for (let i = 0; i < tls.length; i++)
+                                    if (tls[i] && tls[i].niriId === ws.activeWindowId) { app = tls[i].appId.toLowerCase(); break; }
+                                if (app === "") return String(ws.idx || ws.id);
+                                for (const g of wsAlt.appGlyphs) if (app.indexOf(g[0]) >= 0) return g[1];
+                                return "󰣆";
+                            }
+                            function labelOf(ws, i) {
+                                const n = ws.idx || ws.id || (i + 1);
+                                if (Config.wsStyle === "roman") return wsAlt.romans[n - 1] || String(n);
+                                if (Config.wsStyle === "icons") return wsAlt.glyphOf(ws);
+                                if (Config.wsStyle === "pills") return "";
+                                return String(n);
+                            }
+
+                            // the active pill, sliding
+                            Rectangle {
+                                id: altPill
+                                property Item target: null
+                                visible: target !== null
+                                x: target ? target.x : 0
+                                width: target ? target.width : 0
+                                anchors.verticalCenter: parent.verticalCenter
+                                height: Config.wsStyle === "pills" ? 8 : 20
+                                radius: height / 2
+                                color: Colors.onWallAccent
+                                Behavior on x { SpringAnimation { spring: 4; damping: 0.32; epsilon: 0.3 } }
+                                Behavior on width { SpringAnimation { spring: 4; damping: 0.32; epsilon: 0.3 } }
+                            }
+
+                            Row {
+                                id: altRow
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: Config.wsStyle === "pills" ? 6 : 2
+                                Repeater {
+                                    model: wsRepeater.model
+                                    Item {
+                                        id: cell
+                                        required property var modelData
+                                        required property int index
+                                        readonly property bool isActive: win.hlMon
+                                            ? (win.hlMon.activeWorkspace && win.hlMon.activeWorkspace.id === modelData.id)
+                                            : (Compositor.focusedWorkspace && Compositor.focusedWorkspace.id === modelData.id)
+                                        readonly property bool pill: Config.wsStyle === "pills"
+                                        width: cell.pill ? (cell.isActive ? 22 : 8) : Math.max(20, cellText.implicitWidth + 12)
+                                        height: 20
+                                        Behavior on width { SpringAnimation { spring: 4; damping: 0.32; epsilon: 0.3 } }
+                                        onIsActiveChanged: if (isActive) altPill.target = cell
+                                        Component.onCompleted: if (isActive) altPill.target = cell
+                                        Rectangle {
+                                            visible: cell.pill && !cell.isActive
+                                            anchors.centerIn: parent
+                                            width: 8; height: 8; radius: 4
+                                            color: Colors.onWallDim
+                                        }
+                                        Text {
+                                            id: cellText
+                                            visible: !cell.pill
+                                            anchors.centerIn: parent
+                                            text: wsAlt.labelOf(cell.modelData, cell.index)
+                                            color: cell.isActive ? Colors.inkOn(Colors.onWallAccent)
+                                                : (altMa.containsMouse ? Colors.fg : Colors.onWallDim)
+                                            font.family: Config.wsStyle === "icons" ? Appearance.font : Appearance.fontUI
+                                            font.pixelSize: Config.wsStyle === "icons" ? 13 : Appearance.fsXS
+                                            font.weight: cell.isActive ? Font.DemiBold : Font.Medium
+                                            font.features: ({ "tnum": 1 })
+                                        }
+                                        MouseArea {
+                                            id: altMa
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: (mouse) => {
+                                                if (mouse.button === Qt.RightButton) ShellState.toggleStage();
+                                                else Compositor.focusWorkspace(cell.modelData.id);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     BarItem {
-                        Layout.leftMargin: 6
-                        visible: Config.showAppName && ShellState.appName.length > 0
+                        parent: win.slotFor("app")
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: win.shows("app") && Config.showAppName && ShellState.appName.length > 0
                         label: ShellState.appName
                         labelBold: true
                         interactive: false
@@ -727,7 +863,24 @@ Scope {
                     id: rightGroup
                     anchors { right: parent.right; rightMargin: root.sideMargin; top: parent.top }
                     height: root.barH
-                    spacing: 1
+                    spacing: 0
+
+                    Repeater {
+                        id: rightSlots
+                        model: 8
+                        BarSlot { barH: root.barH }
+                    }
+
+                    // Date (off by default; put it on the bar in Settings › Bar).
+                    BarItem {
+                        parent: win.slotFor("date")
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: win.shows("date")
+                        icon: "󰃭"
+                        label: ShellState.now.toLocaleDateString(
+                            Qt.locale(Config.language === "pt" ? "pt_BR" : Config.language === "en" ? "en_GB" : "es_ES"), "ddd d MMM")
+                        onClicked: ShellState.togglePanel("calendar")
+                    }
 
                     // This fork: the right side shows ONLY the battery. The
                     // conditional indicators of the original (screen capture,
@@ -740,7 +893,9 @@ Scope {
                     // Click turns the mode off.
                     BarItem {
                         id: gameItem
-                        visible: ShellState.gameMode
+                        parent: win.slotFor("game")
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: ShellState.gameMode && win.shows("game")
                         readonly property bool low: ShellState.gameRunning && ShellState.gameFps < 30
                         icon: Icons.gamepad
                         iconColor: Colors.accent
@@ -754,7 +909,9 @@ Scope {
 
                     BarItem {
                         id: battItem
-                        visible: ShellState.batt >= 0
+                        parent: win.slotFor("battery")
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: ShellState.batt >= 0 && win.shows("battery")
                         readonly property bool low: !ShellState.ac && ShellState.batt <= 15
                         icon: ShellState.battIcon
                         label: ShellState.batt + "%"

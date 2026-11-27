@@ -20,6 +20,12 @@
   with Apply, like the rest of Appearance); it also switches back to the
   notch stretching.
 
+- **Your bar, your order:** Appearance › Bar has an editor to drag the bar's
+  modules (logo, workspaces, app name, a new date, game mode, battery)
+  between left, right and hidden, and along a row to reorder them.
+- **Workspace styles:** the liquid dots, numbers, roman numerals, pills, or
+  the icon of the app focused on each workspace.
+
 **Fixed**
 - Open GTK apps recolour with the wallpaper when the GTK theme setting is
   Adwaita (Fedora's default).

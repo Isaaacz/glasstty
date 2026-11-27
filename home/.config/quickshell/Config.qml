@@ -41,6 +41,14 @@ Singleton {
     // How notifications pop up: "drops" = cards that fall out of the notch and
     // stack under it (NotifDrops.qml); "notch" = the notch itself stretches.
     property alias notifStyle: opts.notifStyle
+    // The bar (Settings › Appearance › Bar): the workspace indicator's style
+    // ("dots" = the fluid | "numbers" | "roman" | "pills" | "icons") and which
+    // modules sit on the left and on the right, in order. Keys: "logo",
+    // "workspaces", "app", "date", "game", "battery"; a module in neither list
+    // is not shown. The centre belongs to the notch.
+    property alias wsStyle: opts.wsStyle
+    property alias barLeft: opts.barLeft
+    property alias barRight: opts.barRight
     // The drops' look (Settings › Pop-ups). notifSeconds is how long a notice
     // stays when the application does not ask for a time, in either style.
     property alias notifSeconds: opts.notifSeconds
@@ -438,6 +446,9 @@ Singleton {
             lockPanel: false,
             lockDatePill: false,
             notifStyle: "drops",
+            wsStyle: "dots",
+            barLeft: ["logo", "workspaces", "app"],
+            barRight: ["game", "battery"],
             notifSeconds: 4.2,
             dropHeight: 58,
             dropWidth: 460,
@@ -491,6 +502,9 @@ Singleton {
             property string notchStyle: "notch"
             property int islandGap: 4
             property string notifStyle: "drops"
+            property string wsStyle: "dots"
+            property var barLeft: ["logo", "workspaces", "app"]
+            property var barRight: ["game", "battery"]
             property real notifSeconds: 4.2
             property int dropHeight: 58
             property int dropWidth: 460

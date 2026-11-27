@@ -32,7 +32,8 @@ Singleton {
         "lockMessage", "lockShowMedia", "lockShowBattery", "lockShowName", "lockShowPower",
         "lockCard", "lockAvatar", "lockPreset", "lockPanel", "lockDatePill",
         "notifStyle", "notifSeconds", "dropHeight", "dropWidth", "dropColor", "dropOpacity", "dropMax",
-        "dropGap", "dropRing", "dropHoverPause", "dropBody", "dropKindColors", "dropMotion"
+        "dropGap", "dropRing", "dropHoverPause", "dropBody", "dropKindColors", "dropMotion",
+        "wsStyle", "barLeft", "barRight"
     ]
     // What has to run after applying, by group.
     readonly property var effectKeys: ["windowRounding", "winOpacity", "winOpacityInactive", "termOpacity",
@@ -65,7 +66,10 @@ Singleton {
         root.v = o;
         Config[k] = val;                       // live
         const c = Object.assign({}, root.changed);
-        if (val === root.before[k]) delete c[k]; else c[k] = true;
+        // lists (the bar's layout) are new arrays every time: compare contents
+        const same = (typeof val === "object" && val !== null)
+            ? JSON.stringify(val) === JSON.stringify(root.before[k]) : val === root.before[k];
+        if (same) delete c[k]; else c[k] = true;
         root.changed = c;
         root.sideEffects([k], false);
     }

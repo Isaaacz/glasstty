@@ -412,24 +412,29 @@ Flickable {
             }
 
             SettingsControls.Row_ {
-                label: I18n.tr("Logo de Arch")
-                hint: I18n.tr("El glifo de Arch en el extremo izquierdo de la barra.")
-                SettingsControls.Switch_ { checked: AppearanceDraft.v.showArch; onToggled: function (v) { AppearanceDraft.set("showArch", v); } }
+                label: I18n.tr("Módulos de la barra")
+                hint: I18n.tr("Arrastra cada módulo a la izquierda, a la derecha o a Ocultos, y a lo largo de una fila para cambiar el orden. El centro es del notch.")
+                BarLayoutEditor { Layout.preferredWidth: 400 }
             }
             SettingsControls.Row_ {
-                label: I18n.tr("Workspaces")
-                hint: I18n.tr("Los puntos de escritorio, con el activo alargado.")
-                SettingsControls.Switch_ { checked: AppearanceDraft.v.showWorkspaces; onToggled: function (v) { AppearanceDraft.set("showWorkspaces", v); } }
+                label: I18n.tr("Estilo de los escritorios")
+                hint: I18n.tr("Puntos: el indicador líquido. Números, romanos o píldoras. Iconos: el de la app enfocada en cada escritorio.")
+                SettingsControls.Choice_ {
+                    options: [I18n.tr("Puntos"), I18n.tr("Números"), I18n.tr("Romanos"), I18n.tr("Píldoras"), I18n.tr("Iconos")]
+                    current: AppearanceDraft.v.wsStyle === "numbers" ? I18n.tr("Números")
+                        : AppearanceDraft.v.wsStyle === "roman" ? I18n.tr("Romanos")
+                        : AppearanceDraft.v.wsStyle === "pills" ? I18n.tr("Píldoras")
+                        : AppearanceDraft.v.wsStyle === "icons" ? I18n.tr("Iconos") : I18n.tr("Puntos")
+                    onPicked: function (v) {
+                        AppearanceDraft.set("wsStyle", v === I18n.tr("Números") ? "numbers" : v === I18n.tr("Romanos") ? "roman"
+                            : v === I18n.tr("Píldoras") ? "pills" : v === I18n.tr("Iconos") ? "icons" : "dots");
+                    }
+                }
             }
             SettingsControls.Row_ {
                 label: I18n.tr("Organizador visual")
                 hint: I18n.tr("Muestra miniaturas de tus escritorios al acercar el cursor al borde izquierdo.")
                 SettingsControls.Switch_ { checked: AppearanceDraft.v.stageEnabled; onToggled: function (v) { AppearanceDraft.set("stageEnabled", v); } }
-            }
-            SettingsControls.Row_ {
-                label: I18n.tr("Nombre de la app")
-                hint: I18n.tr("El nombre de la ventana que tienes enfocada.")
-                SettingsControls.Switch_ { checked: AppearanceDraft.v.showAppName; onToggled: function (v) { AppearanceDraft.set("showAppName", v); } }
             }
             SettingsControls.Row_ {
                 label: I18n.tr("Bandeja del sistema")
