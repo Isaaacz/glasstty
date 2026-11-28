@@ -179,17 +179,17 @@ Scope {
         function btask(kind: string, name: string, code: string, entered: int): void {
             const ok = ["confirm", "display", "authorize"];
             if (ok.indexOf(kind) < 0) return;
-            ShellState.btAsk(kind, name, code, entered);
+            BluetoothPairing.btAsk(kind, name, code, entered);
         }
-        function btclear(): void { ShellState.btClear(); }
+        function btclear(): void { BluetoothPairing.btClear(); }
 
         // Timer: "10m", "1h30", "90s"… and "stop" to cancel it.
         // The same as typing it in the launcher, but from a script: at the end
         // of a `make`, of a backup, of whatever.
         function timer(spec: string): void {
-            if (spec === "stop" || spec === "off" || spec === "") { ShellState.timerClear(); return; }
-            const secs = ShellState.parseDuration(spec);
-            if (secs > 0) ShellState.timerStart(secs);
+            if (spec === "stop" || spec === "off" || spec === "") { Satellite.timerClear(); return; }
+            const secs = Satellite.parseDuration(spec);
+            if (secs > 0) Satellite.timerStart(secs);
         }
     }
 
@@ -324,8 +324,8 @@ Scope {
                 Region {
                     intersection: Intersection.Combine
                     x: Math.floor(bubble.x); y: Math.floor(bubble.y)
-                    width: ShellState.bubbleOn ? Math.ceil(bubble.width) : 0
-                    height: ShellState.bubbleOn ? Math.ceil(bubble.height) : 0
+                    width: Satellite.bubbleOn ? Math.ceil(bubble.width) : 0
+                    height: Satellite.bubbleOn ? Math.ceil(bubble.height) : 0
                 }
             }
 
@@ -790,7 +790,7 @@ Scope {
                 Item {
                     id: bubble
 
-                    readonly property bool on: ShellState.bubbleOn
+                    readonly property bool on: Satellite.bubbleOn
                     readonly property real h: 28
                     // The notch's right edge AT REST (see decision 2).
                     readonly property real restRight: (surface.width
@@ -807,7 +807,7 @@ Scope {
                         SpringAnimation { spring: Appearance.sprPanel; damping: Appearance.dmpPanel; epsilon: Appearance.eppScale }
                     }
 
-                    readonly property bool wide: bubbleMa.containsMouse || ShellState.bubbleAlert
+                    readonly property bool wide: bubbleMa.containsMouse || Satellite.bubbleAlert
 
                     x: hiddenX + (shownX - hiddenX) * reveal
                     y: notch.gap + (root.barH - notch.gap - h) / 2
@@ -836,7 +836,7 @@ Scope {
                         width: bubble.h; height: bubble.h
                         preferredRendererType: Shape.CurveRenderer
                         antialiasing: true
-                        readonly property real det: ShellState.bubbleProgress
+                        readonly property real det: Satellite.bubbleProgress
                         readonly property real r: bubble.h / 2 - 2.5
 
                         ShapePath {
@@ -851,7 +851,7 @@ Scope {
                             }
                         }
                         ShapePath {
-                            strokeColor: ShellState.bubbleAlert ? Colors.crit : Colors.accent
+                            strokeColor: Satellite.bubbleAlert ? Colors.crit : Colors.accent
                             strokeWidth: 2.5
                             fillColor: "transparent"
                             capStyle: ShapePath.RoundCap
@@ -877,8 +877,8 @@ Scope {
                     Text {
                         x: (bubble.h - implicitWidth) / 2
                         anchors.verticalCenter: parent.verticalCenter
-                        text: ShellState.bubbleIcon
-                        color: ShellState.bubbleAlert ? Colors.crit : Colors.label
+                        text: Satellite.bubbleIcon
+                        color: Satellite.bubbleAlert ? Colors.crit : Colors.label
                         font.family: Appearance.font
                         font.pixelSize: Appearance.fsS
                     }
@@ -887,7 +887,7 @@ Scope {
                         id: label
                         x: bubble.h + 2
                         anchors.verticalCenter: parent.verticalCenter
-                        text: ShellState.bubbleLabel
+                        text: Satellite.bubbleLabel
                         color: Colors.label
                         font.family: Appearance.fontUI
                         font.pixelSize: Appearance.fsS
@@ -905,9 +905,9 @@ Scope {
                         cursorShape: Qt.PointingHandCursor
                         acceptedButtons: Qt.LeftButton | Qt.RightButton
                         onClicked: function (m) {
-                            if (ShellState.bubbleKind !== "timer") return;
-                            if (m.button === Qt.RightButton) ShellState.timerClear();
-                            else ShellState.timerToggle();
+                            if (Satellite.bubbleKind !== "timer") return;
+                            if (m.button === Qt.RightButton) Satellite.timerClear();
+                            else Satellite.timerToggle();
                         }
                     }
                 }

@@ -5,7 +5,9 @@
 // same state and cannot fall out of sync.
 //
 // Parts with a life of their own live in their own singletons: Launcher.qml
-// (the launcher's apps, modes, calculator and favourites).
+// (the launcher's apps, modes, calculator and favourites), Satellite.qml (the
+// bubble beside the notch and its timer), BluetoothPairing.qml (BlueZ's
+// questions while pairing) and AudioSpectrum.qml (the visualiser's bars).
 pragma Singleton
 
 import Quickshell
@@ -189,7 +191,7 @@ Singleton {
     // that rule. It is not a notice: it is a question with an expiry, with a
     // device waiting on the other side. If it stayed behind whatever panel you
     // had open, the pairing would expire without you ever seeing it.
-    readonly property string mode: btAsking ? "btpair"
+    readonly property string mode: BluetoothPairing.btAsking ? "btpair"
         : panel !== "" ? panel
         : activity === "notif" ? "notif"
         : activity === "toast" ? "toast"
@@ -324,7 +326,7 @@ Singleton {
     readonly property int notchH: root.notchBaseH + root.notchGapDeCara
 
     readonly property int notchBaseH: mode === "launcher" ? launcherH
-        : mode === "btpair" ? (btKind === "display" ? 96 : 112)
+        : mode === "btpair" ? (BluetoothPairing.btKind === "display" ? 96 : 112)
         : mode === "overview" ? ovH
         : mode === "control" ? 420
         : mode === "system" ? 420
@@ -790,179 +792,6 @@ Singleton {
         }
     }
 
-    // ──────────────── audio spectrum (cava) ─────────────────
-    // The notch's little bars. This used to be a PwNodePeakMonitor: ONE single
-    // number (the sink's global peak) shifted along the array. That is not a
-    // spectrum, it is the same signal repeated 14 times —all the bars rose and
-    // fell together— and since the linear peak nearly always brushes 1, they
-    // stayed pinned to the ceiling (barcode effect). Worse: onPeakChanged only
-    // fires when the value CHANGES, so in a compressed stretch the signal
-    // stopped arriving and the bars FROZE.
-    //
-    // cava does do an FFT: it gives `bands` independent values per frame, from
-    // bass to treble, and with its own autosens (quiet music fills just the
-    // same, loud music does not saturate). "raw" output in ascii, one line per
-    // frame: "0;312;…;\n". The configuration lives in scripts/cava.conf.
-    // Few and thick. With 14 the strip read as a pattern of stripes rather than
-    // as an equaliser: at 2.5 px wide you cannot tell one bar from its
-    // neighbour. If you change this, change `bars` in scripts/cava.conf.
-    readonly property int bands: 8
-
-    // WHY CAVA'S VALUE IS NOT PAINTED AS IT COMES. Because cava's values JUMP:
-    // a single band goes from 2 to 1000 and back in a handful of frames.
-    // Painting that directly is not an equaliser, it is a strobe — and it was
-    // exactly the jitter you could see. Measured by recording the notch at 60
-    // fps and measuring the PAINTED bars:
-    //
-    //                             max jump   jerks
-    //   painting the raw value     16.7 px   0.200
-    //   with this follower          1.3 px   0.079
-    //
-    // So cava only sets the TARGET, and what MOVES the bar is the screen's
-    // clock: a FrameAnimation that on every frame brings it a little closer,
-    // according to the REAL time elapsed (frameTime). It is what caelestia does
-    // (Internal/visualiserbars.cpp: alpha = 1 - exp(-dt/tau)), which is where
-    // this bar's architecture comes from.
-    //
-    // Exponential on purpose: advancing a FRACTION of what is left gives no
-    // jumps or sudden stops —the speed is continuous— and being tied to real
-    // time it does not matter if a frame is dropped: the bar is always where it
-    // should be.
-    //
-    // What does NOT work, tried and measured: smoothing in cava
-    // (noise_reduction), smoothing the received value, or quantising the height
-    // into steps. All of that touches the NUMBERS, and what has to be
-    // continuous is the MOTION.
-    //
-    // IT RISES FAST AND FALLS SLOWLY, like a VU meter. With a single constant
-    // for both directions the bar COLLAPSES as fast as it rises: at tau 35 it
-    // eats 38% of what is left on every frame, so a peak comes apart in three
-    // frames (~50 ms). That does not read as a bar going down, it reads as a
-    // bar switching off — a blink.
-    //
-    // With attack and decay separated, the hit still lands just as crisply
-    // (it is what marks the rhythm) but the return is a glide of ~1/3 of a
-    // second, which is plenty of time for the eye to follow it as continuous
-    // motion.
-    //
-    // tau = ms it takes to eat 63% of what is left. Lower = more glued to the
-    // music and more nervous; higher = smoother and lazier. The decay cannot go
-    // above ~150: beyond that, two consecutive kick-drum hits at 120 bpm
-    // overlap and the bar stops marking the beat.
-    readonly property int cavaSube: 32    // attack
-    readonly property int cavaBaja: 110   // decay
-
-    property var cavaTarget: new Array(bands).fill(0)   // what cava says
-
-    // WHY EVERY BAND HAS ITS OWN RANGE. With dense music no band ever goes
-    // below 200-400 out of 1000, so mapping 0-1000 straight onto the bar left
-    // all eight half-to-two-thirds high, travelling 2-3 px out of 18 in half a
-    // second: an equaliser that looks frozen. Each band keeps a window that
-    // jumps at once to a new peak or valley and forgets it slowly, and the bar
-    // is painted inside that window, so every beat goes from floor to ceiling
-    // whatever the band's loudness. Simulated on the same cava output: travel
-    // 2.7 -> 8.4 px every half second, at the ceiling 23% of the time.
-    //
-    // cavaRango = ms it takes to forget 63% of a peak or valley. Lower = more
-    // nervous, it stretches even the quiet passages; higher = slower to adapt
-    // when the song changes section.
-    // cavaRangoMin = the narrowest window, so a near-silent band does not get
-    // its noise blown up to full height.
-    readonly property int cavaRango: 2500
-    readonly property real cavaRangoMin: 0.25
-    property var cavaHi: new Array(bands).fill(0.5)
-    property var cavaLo: new Array(bands).fill(0.3)
-    property real cavaUltima: 0
-    property var levels: new Array(bands).fill(0)       // what gets painted
-    property bool cavaQuieto: true
-
-    FrameAnimation {
-        // Keeps running after the music stops until the bars have come down
-        // completely: that way they glide to the floor instead of vanishing at once.
-        running: cavaProc.running || !root.cavaQuieto
-        onTriggered: {
-            // smoothFrameTime and not frameTime: the real gap between frames
-            // fluctuates (16.7 · 12 · 21 · 16…), and since the follower's step
-            // is computed from that gap, using the raw one makes the bar advance
-            // in fits and starts even when the signal is perfect. Qt averages
-            // that measurement precisely for this; the position error it
-            // introduces corrects itself on the next frame, because the follower
-            // chases the target, it does not accumulate.
-            const dt = smoothFrameTime * 1000;
-            const aSube = 1 - Math.exp(-dt / root.cavaSube);
-            const aBaja = 1 - Math.exp(-dt / root.cavaBaja);
-            const out = new Array(root.bands);
-            let quieto = true;
-            for (let i = 0; i < root.bands; i++) {
-                const falta = root.cavaTarget[i] - root.levels[i];
-                if (Math.abs(falta) > 0.001) {
-                    out[i] = root.levels[i] + falta * (falta > 0 ? aSube : aBaja);
-                    quieto = false;
-                } else {
-                    out[i] = root.cavaTarget[i];
-                }
-            }
-            root.levels = out;
-            root.cavaQuieto = quieto;
-        }
-    }
-
-    // Starts and stops cava with the music, and BRINGS IT BACK if it dies.
-    //
-    // `running: root.mediaLive` is NOT used here, which is the natural thing and
-    // was so until 7 Aug 2026: when the process dies (it crashes, or someone
-    // kills it), quickshell writes running=false, and that write BREAKS the
-    // binding. From then on cava never starts again —not even reloading the
-    // config— and the visualiser is left with eight flat bars even though music
-    // is playing. It is driven by hand: the timer reasserts the state every 3 s,
-    // so at most it takes that long to get back up by itself. triggeredOnStart
-    // = it starts at once when playback begins, without waiting for the first tick.
-    Timer {
-        interval: 3000
-        repeat: true
-        triggeredOnStart: true
-        running: root.mediaLive
-        onTriggered: cavaProc.running = true
-    }
-    onMediaLiveChanged: if (!root.mediaLive) cavaProc.running = false
-
-    Process {
-        id: cavaProc
-        command: ["cava", "-p", root.home + "/.config/quickshell/scripts/cava.conf"]
-        stdout: SplitParser {
-            onRead: function (line) {
-                const parts = line.split(";");
-                const now = Date.now();
-                const dt = root.cavaUltima ? Math.min(100, now - root.cavaUltima) : 16.7;
-                root.cavaUltima = now;
-                const olvido = 1 - Math.exp(-dt / root.cavaRango);
-                const hi = root.cavaHi.slice();
-                const lo = root.cavaLo.slice();
-                const out = new Array(root.bands);
-                for (let i = 0; i < root.bands; i++) {
-                    const v = Math.max(0, Math.min(1, (+parts[i] || 0) / 1000));
-                    hi[i] = v > hi[i] ? v : hi[i] + (v - hi[i]) * olvido;
-                    lo[i] = v < lo[i] ? v : lo[i] + (v - lo[i]) * olvido;
-                    // A window narrower than the minimum grows downwards, so a
-                    // loud band still reaches the ceiling.
-                    const span = Math.max(hi[i] - lo[i], root.cavaRangoMin);
-                    const base = Math.min(lo[i], Math.max(0, hi[i] - span));
-                    out[i] = Math.max(0, Math.min(1, (v - base) / span));
-                }
-                root.cavaHi = hi;
-                root.cavaLo = lo;
-                root.cavaTarget = out;   // only the target; moving is the FrameAnimation's job
-                root.cavaQuieto = false;
-            }
-        }
-        // On pause, cava dies and the target would keep the last snapshot:
-        // bars at half height through the whole fade-out.
-        onRunningChanged: if (!running) {
-            root.cavaTarget = new Array(root.bands).fill(0);
-            root.cavaUltima = 0;
-        }
-    }
-
     // ═════════════════════ brightness ═════════════════════
     property int bright: -1
     Process {
@@ -1210,123 +1039,6 @@ Singleton {
         }
     }
 
-    // ══════════════════════ the satellite bubble ═══════════════════════
-    // A small body that peeks out from BEHIND the notch's right edge when
-    // something is running in the background.
-    //
-    // Why a satellite and not one more face: the resting notch measures exactly
-    // the reserved band and cannot grow by itself — that is the rule that keeps
-    // it from ever covering a window. A countdown lasts minutes, so it does not
-    // fit there without breaking the rule. A separate body does: it is born
-    // behind the edge, stays INSIDE the band, and the notch stays the same size.
-    //
-    // This is a SLOT, not a timer. Today two things fill it, and adding a third
-    // (a download, a build) is one more line in bubbleKind. The timer wins over
-    // background work because you asked for the timer and the other just happens.
-    readonly property string bubbleKind: timerTotal > 0 ? "timer" : (busy ? "busy" : "")
-    readonly property bool bubbleOn: bubbleKind !== ""
-    // -1 = indeterminate: we know it is still going, not how much is left.
-    readonly property real bubbleProgress: (bubbleKind === "timer" && timerTotal > 0)
-        ? Math.max(0, Math.min(1, timerLeft / timerTotal)) : -1
-    readonly property string bubbleIcon: bubbleKind === "timer"
-        ? (timerDone ? Icons.alarm : (timerRunning ? Icons.timer : Icons.pause))
-        : Icons.sync
-    readonly property string bubbleLabel: bubbleKind === "timer"
-        ? (timerDone ? I18n.tr("¡Tiempo!") : timerClock(timerLeft))
-        : I18n.tr("Sincronizando")
-    readonly property bool bubbleAlert: timerDone
-
-    // "I am doing something and it is taking a while." Only the sync you ask
-    // for with a right-click on the updates, not the automatic check every five
-    // minutes: that one happens by itself, and lighting up a new body on the
-    // screen every five minutes is noise, not information.
-    readonly property bool busy: pacmanProc.running && pacmanProc.forceSync
-
-    // ── the timer ──
-    property int timerTotal: 0        // seconds requested; 0 = no timer
-    property int timerLeft: 0
-    property bool timerRunning: false
-    property bool timerDone: false    // already went off and you have not dismissed it yet
-
-    Timer {
-        interval: 1000
-        repeat: true
-        running: root.timerRunning
-        onTriggered: {
-            root.timerLeft = Math.max(0, root.timerLeft - 1);
-            if (root.timerLeft > 0) return;
-            root.timerRunning = false;
-            root.timerDone = true;
-            // We ARE the notification server (see further down), so this
-            // notify-send comes round and back to our own notch. There is no
-            // need to invent a notice: the existing one is used, and along the
-            // way it stays in the control centre's history.
-            Quickshell.execDetached(["notify-send", "-u", "critical",
-                                     "-a", I18n.tr("Temporizador"),
-                                     I18n.tr("Temporizador"),
-                                     I18n.tr("{0} cumplidos", root.timerSpoken(root.timerTotal))]);
-        }
-    }
-
-    function timerStart(seconds) {
-        if (seconds <= 0) return;
-        root.timerTotal = seconds;
-        root.timerLeft = seconds;
-        root.timerDone = false;
-        root.timerRunning = true;
-    }
-    // A click on the bubble: if it already went off, it dismisses it; if not, pause and resume.
-    function timerToggle() {
-        if (root.timerDone) { root.timerClear(); return; }
-        if (root.timerTotal <= 0) return;
-        root.timerRunning = !root.timerRunning;
-    }
-    function timerClear() {
-        root.timerRunning = false;
-        root.timerTotal = 0;
-        root.timerLeft = 0;
-        root.timerDone = false;
-    }
-
-    // mm:ss, and hh:mm:ss only if there really are hours. A "00:09:59" for ten
-    // minutes is two digits that say nothing taking up room in a 28 px body.
-    function timerClock(sec) {
-        const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), x = sec % 60;
-        const two = n => (n < 10 ? "0" + n : String(n));
-        return h > 0 ? (h + ":" + two(m) + ":" + two(x)) : (m + ":" + two(x));
-    }
-    // How it is said out loud, for the notice: "25 min", "1 h 30 min".
-    function timerSpoken(sec) {
-        const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), x = sec % 60;
-        const parts = [];
-        if (h > 0) parts.push(I18n.tr("{0} h", h));
-        if (m > 0) parts.push(I18n.tr("{0} min", m));
-        if (x > 0 && h === 0) parts.push(I18n.tr("{0} s", x));
-        return parts.join(" ");
-    }
-
-    // ── from what you type to seconds ──
-    // Recognises "10m", "25 min", "1h", "90s", "1h30", "1h 5 min".
-    //
-    // It DEMANDS A UNIT on purpose. A bare "5" is a search, and if the launcher
-    // offered a countdown every time you typed a number it would get in the way
-    // of every search that starts with a digit. It is the same rule the
-    // calculator already uses so as not to fire on "7zip".
-    function parseDuration(text) {
-        const t = String(text || "").trim().toLowerCase().replace(/\s+/g, "");
-        if (t.length === 0) return -1;
-        // "1h30" = an hour and a half. It is how everybody writes it and it
-        // does not fit the form with units, so it goes separately.
-        const hm = t.match(/^(\d+)h(\d{1,2})$/);
-        if (hm) return parseInt(hm[1]) * 3600 + parseInt(hm[2]) * 60;
-        // Units in both languages, because the timer follows the shell's: in
-        // English "5 minutes" used to be rejected and only "5 min" got through.
-        const m = t.match(/^(?:(\d+)(?:horas?|hours?|hrs?|h))?(?:(\d+)(?:minutos?|minutes?|mins?|m))?(?:(\d+)(?:segundos?|seconds?|segs?|secs?|s))?$/);
-        if (!m || (!m[1] && !m[2] && !m[3])) return -1;
-        const sec = parseInt(m[1] || 0) * 3600 + parseInt(m[2] || 0) * 60 + parseInt(m[3] || 0);
-        return (sec > 0 && sec <= 86400) ? sec : -1;
-    }
-
     // ═════════════════════ network ═════════════════════
     readonly property var wifiDev: {
         const ds = Networking.devices ? Networking.devices.values : [];
@@ -1566,6 +1278,9 @@ Singleton {
     // not go through I18n.tr.
     property string pacmanTip: ""
     property string pacmanClass: ""
+    // A forced update is running (right-click): the satellite bubble shows it.
+    readonly property bool updating: pacmanProc.running && pacmanProc.forceSync
+
     Process {
         id: pacmanProc
         // true = right-click: invalidates the timestamp and forces a sync.
@@ -2168,58 +1883,4 @@ Singleton {
     }
     Timer { interval: 1800; running: true; onTriggered: root.updateBatteryIdle() }
 
-    // ══════════════════════════ bluetooth pairing ═══════════════════════════
-    // Quickshell knows how to pair (Bluetooth.pair()) but NOT how to answer what
-    // BlueZ asks halfway through pairing: "does this code match?", "type these
-    // six digits". Those questions arrive at a D-Bus object that has to be
-    // EXPORTED, and QML cannot export D-Bus objects. That is why there is a
-    // separate process (scripts/bt-agent.py) that does, and that talks to the
-    // notch over IPC. Only what has to be shown and the answer live here.
-    //
-    // Without this headphones pair just the same (they ask nothing) but a
-    // keyboard or a controller fails SILENTLY, which is the worst of all: there
-    // is no error, it simply never pairs.
-    property string btKind: ""     // "" | "confirm" | "display" | "authorize"
-    property string btName: ""     // name of the device
-    property string btCode: ""     // the six digits, "" if there are none
-    property int btEntered: -1     // digits already typed (only in "display")
-    readonly property bool btAsking: root.btKind !== ""
-
-    function btAsk(kind, name, code, entered) {
-        root.btKind = kind;
-        root.btName = name;
-        root.btCode = code;
-        root.btEntered = entered;
-    }
-
-    function btClear() {
-        root.btKind = ""; root.btName = ""; root.btCode = ""; root.btEntered = -1;
-    }
-
-    function btReply(accept) {
-        // ALWAYS cleared, whatever the agent answers: if the process had died,
-        // the face would stay stuck in the notch covering everything else
-        // (btpair goes ahead even of the panels).
-        btReplyProc.command = ["busctl", "--user", "call",
-            "org.quickshell.BtAgent", "/org/quickshell/btagent",
-            "org.quickshell.BtAgent1", "Reply", "b", accept ? "true" : "false"];
-        btReplyProc.running = true;
-        root.btClear();
-    }
-
-    Process { id: btReplyProc }
-
-    // Reorder by dragging: `to` is the insertion SLOT (0..n), not an element's
-    // index, which is why one has to be subtracted when moving to the right
-    // (taking the element out shifts everything behind it one position).
-    function moveFav(from, to) {
-        const ids = Config.favApps.slice();
-        if (from < 0 || from >= ids.length) return;
-        let t = Math.max(0, Math.min(ids.length, to));
-        if (t > from) t -= 1;
-        if (t === from) return;
-        ids.splice(t, 0, ids.splice(from, 1)[0]);
-        Config.favApps = ids;
-        Config.save();
-    }
 }

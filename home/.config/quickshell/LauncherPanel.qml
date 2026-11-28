@@ -196,7 +196,7 @@ Item {
         // Outside applications mode there are no sums or durations: "2+2" in
         // the clipboard is text to search for, not an addition.
         root.calc = root.isApps ? Launcher.calcEval(field.text) : null;
-        root.timerSec = root.isApps ? ShellState.parseDuration(field.text) : -1;
+        root.timerSec = root.isApps ? Satellite.parseDuration(field.text) : -1;
 
         switch (root.mode) {
         case "clip": root.results = Launcher.searchClip(field.text); break;
@@ -242,7 +242,7 @@ Item {
     // apps mode.
     function launchCurrent() {
         if (root.calcSelected && root.hasTimer) {
-            ShellState.timerStart(root.timerSec);
+            Satellite.timerStart(root.timerSec);
             ShellState.closePanel();
             return;
         }
@@ -632,7 +632,7 @@ Item {
                             // Launcher.favApps, and syncFavs() only repaints if
                             // there is no longer a drag in progress.
                             root.favDrag = -1; root.favMoving = false; root.favSlot = -1;
-                            if (moved) { if (to >= 0) ShellState.moveFav(from, to); }
+                            if (moved) { if (to >= 0) Launcher.moveFav(from, to); }
                             else Launcher.launchApp(favCell.modelData);
                         }
 
@@ -703,7 +703,7 @@ Item {
                     spacing: 0
                     Text {
                         Layout.fillWidth: true
-                        text: root.hasTimer ? ShellState.timerClock(root.timerSec)
+                        text: root.hasTimer ? Satellite.timerClock(root.timerSec)
                                             : Launcher.calcFormat(root.calc)
                         color: Colors.label; elide: Text.ElideRight
                         font.family: Appearance.fontUI; font.pixelSize: 19; font.weight: Font.DemiBold
@@ -731,7 +731,7 @@ Item {
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
-                    if (root.hasTimer) ShellState.timerStart(root.timerSec);
+                    if (root.hasTimer) Satellite.timerStart(root.timerSec);
                     else Launcher.copyText(Launcher.calcFormat(root.calc));
                     ShellState.closePanel();
                 }

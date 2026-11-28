@@ -330,11 +330,11 @@ Item {
 
             Item {
                 anchors.centerIn: parent
-                width: ShellState.bands * 13 - 7
+                width: AudioSpectrum.bands * 13 - 7
                 height: 58
 
                 Repeater {
-                    model: ShellState.bands
+                    model: AudioSpectrum.bands
                     Rectangle {
                         required property int index
                         x: index * 13
@@ -343,7 +343,7 @@ Item {
                         antialiasing: true
                         color: root.accent
                         Behavior on color { ColorAnimation { duration: Appearance.mIn; easing.type: Easing.OutCubic } }
-                        height: Math.max(6, 58 * (ShellState.levels[index] || 0))
+                        height: Math.max(6, 58 * (AudioSpectrum.levels[index] || 0))
                         y: (58 - height) / 2
                     }
                 }

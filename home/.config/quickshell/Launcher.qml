@@ -594,4 +594,18 @@ Singleton {
         Config.favApps = ids;
         Config.save();
     }
+
+    // Reorder by dragging: `to` is the insertion SLOT (0..n), not an element's
+    // index, which is why one has to be subtracted when moving to the right
+    // (taking the element out shifts everything behind it one position).
+    function moveFav(from, to) {
+        const ids = Config.favApps.slice();
+        if (from < 0 || from >= ids.length) return;
+        let t = Math.max(0, Math.min(ids.length, to));
+        if (t > from) t -= 1;
+        if (t === from) return;
+        ids.splice(t, 0, ids.splice(from, 1)[0]);
+        Config.favApps = ids;
+        Config.save();
+    }
 }

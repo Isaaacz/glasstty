@@ -154,7 +154,7 @@ Item {
             // neighbours.
             Item {
                 anchors.verticalCenter: parent.verticalCenter
-                width: ShellState.bands * 8 - 4
+                width: AudioSpectrum.bands * 8 - 4
                 height: 18
 
                 Repeater {
@@ -163,7 +163,7 @@ Item {
                     // right: the motion is already carried by ShellState's
                     // per-frame follower; an animation here restarts with
                     // every sample, never finishes, and only adds judder.
-                    model: ShellState.bands
+                    model: AudioSpectrum.bands
                     Rectangle {
                         required property int index
                         x: index * 8
@@ -195,7 +195,7 @@ Item {
                         antialiasing: true
                         // The floor is the width: at rest each bar is a round
                         // dot, not a squashed pill.
-                        height: Math.max(4, 18 * (ShellState.levels[index] || 0))
+                        height: Math.max(4, 18 * (AudioSpectrum.levels[index] || 0))
                         // It grows both ways from the centre of the box, which
                         // is a constant: the reference never moves.
                         y: (18 - height) / 2
@@ -454,7 +454,7 @@ Item {
         anchors.fill: parent
         active: root.mode === "btpair"
 
-        readonly property bool ask: ShellState.btKind !== "display"
+        readonly property bool ask: BluetoothPairing.btKind !== "display"
 
         ColumnLayout {
             anchors { fill: parent; leftMargin: 16; rightMargin: 16; topMargin: 8; bottomMargin: 10 }
@@ -465,7 +465,7 @@ Item {
                 spacing: 12
 
                 Text {
-                    text: ShellState.btKind === "display" ? Icons.keyboard : Icons.btPair
+                    text: BluetoothPairing.btKind === "display" ? Icons.keyboard : Icons.btPair
                     color: Colors.accentInk
                     font.family: Appearance.font
                     font.pixelSize: Appearance.fsXL
@@ -476,7 +476,7 @@ Item {
                     spacing: 0
                     Text {
                         Layout.fillWidth: true
-                        text: ShellState.btName.length > 0 ? ShellState.btName : I18n.tr("Aparato desconocido")
+                        text: BluetoothPairing.btName.length > 0 ? BluetoothPairing.btName : I18n.tr("Aparato desconocido")
                         color: Colors.label
                         elide: Text.ElideRight
                         font.family: Appearance.fontUI
@@ -485,9 +485,9 @@ Item {
                     }
                     Text {
                         Layout.fillWidth: true
-                        text: ShellState.btKind === "display"
+                        text: BluetoothPairing.btKind === "display"
                                 ? I18n.tr("Teclea este código y pulsa Enter")
-                                : ShellState.btKind === "authorize"
+                                : BluetoothPairing.btKind === "authorize"
                                     ? I18n.tr("Quiere emparejarse con este equipo")
                                     : I18n.tr("¿Sale este mismo código en el aparato?")
                         color: Colors.label2
@@ -501,8 +501,8 @@ Item {
                 // with what the device shows. tnum so it does not jitter as you
                 // type.
                 Text {
-                    visible: ShellState.btCode.length > 0
-                    text: ShellState.btCode
+                    visible: BluetoothPairing.btCode.length > 0
+                    text: BluetoothPairing.btCode
                     color: Colors.label
                     font.family: Appearance.fontUI
                     font.pixelSize: Appearance.fsXL
@@ -515,7 +515,7 @@ Item {
             // Typing progress: BlueZ keeps reporting how many digits you have
             // typed. It is the only sign the keyboard is talking to the machine.
             Rectangle {
-                visible: ShellState.btKind === "display" && ShellState.btEntered >= 0
+                visible: BluetoothPairing.btKind === "display" && BluetoothPairing.btEntered >= 0
                 Layout.fillWidth: true
                 Layout.preferredHeight: 3
                 radius: 2
@@ -524,8 +524,8 @@ Item {
                     // The fraction, not the width: the rail stretches with the
                     // notch as it opens, and animating the width makes the code
                     // progress seem to advance by itself. See MediaPanel.
-                    property real p: Math.min(1, ShellState.btEntered
-                            / Math.max(1, ShellState.btCode.length))
+                    property real p: Math.min(1, BluetoothPairing.btEntered
+                            / Math.max(1, BluetoothPairing.btCode.length))
                     Behavior on p { NumberAnimation { duration: Appearance.mQuick; easing.type: Easing.OutQuad } }
 
                     height: parent.height
@@ -583,7 +583,7 @@ Item {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: ShellState.btReply(modelData.ok)
+                            onClicked: BluetoothPairing.btReply(modelData.ok)
                         }
                     }
                 }
@@ -648,11 +648,11 @@ Item {
             // space, and what we tell it is how much we ask for, not our size.
             Item {
                 Layout.alignment: Qt.AlignVCenter
-                implicitWidth: ShellState.bands * 8 - 4
+                implicitWidth: AudioSpectrum.bands * 8 - 4
                 implicitHeight: 22
 
                 Repeater {
-                    model: ShellState.bands
+                    model: AudioSpectrum.bands
                     Rectangle {
                         required property int index
                         x: index * 8
@@ -660,7 +660,7 @@ Item {
                         color: ShellState.mediaAccent
                         Behavior on color { ColorAnimation { duration: Appearance.mIn; easing.type: Easing.OutCubic } }
                         antialiasing: true
-                        height: Math.max(4, 22 * (ShellState.levels[index] || 0))
+                        height: Math.max(4, 22 * (AudioSpectrum.levels[index] || 0))
                         y: (22 - height) / 2
                     }
                 }
