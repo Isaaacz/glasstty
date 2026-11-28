@@ -204,6 +204,16 @@ window-rule {
     }
 }
 
+// The mirror of the laptop screen on a TV / monitor (Mod+P menu, scripts/displaymode.sh):
+// a plain copy, never dimmed or blurred as an inactive window.
+window-rule {
+    match app-id="^at\\.yrlf\\.wl_mirror$"
+    opacity 1.0
+    background-effect {
+        blur false
+    }
+}
+
 // The terminal: one transparency whether focused or not. It comes after the
 // inactive rule so it wins there too; kitty's own background_opacity is under it.
 window-rule {
@@ -254,6 +264,8 @@ binds {
     Mod+D            allow-inhibiting=false hotkey-overlay-title="Central de controle" { spawn "qs" "ipc" "call" "notch" "control"; }
     Ctrl+Space       hotkey-overlay-title="Launcher" { spawn "qs" "ipc" "call" "notch" "launcher"; }
     Mod+Comma        allow-inhibiting=false hotkey-overlay-title="Ajustes" { spawn "qs" "ipc" "call" "notch" "settings"; }
+    Mod+Shift+G      allow-inhibiting=false hotkey-overlay-title="Desempenho sobre o jogo" { spawn "qs" "ipc" "call" "gamemode" "overlay"; }
+    Mod+P            allow-inhibiting=false hotkey-overlay-title="Telas (notebook · estender · espelhar · TV)" { spawn "qs" "ipc" "call" "notch" "display"; }
     Mod+A            allow-inhibiting=false { spawn "qs" "ipc" "call" "notch" "settings"; }
     Mod+Tab          allow-inhibiting=false hotkey-overlay-title="Mapa de áreas de trabalho" { spawn "qs" "ipc" "call" "notch" "overview"; }
     // Stage Manager = niri's Overview (no IPC round trip needed).
