@@ -22,6 +22,17 @@ Singleton {
     // be put inside the notch. Here we are the D-Bus server and we paint both the
     // pop-up notice and the history ourselves.
     property bool dnd: false
+    // While you play (GameMode.playing) notices go straight to the history
+    // without popping up, except critical ones (battery about to die…). They
+    // are counted, and the session summary tells you how many came.
+    readonly property bool quietForGame: Config.gameDnd && GameMode.playing
+    property int missedWhilePlaying: 0
+    function quiet(n) {
+        if (root.dnd) return true;
+        if (!root.quietForGame || n.urgency === NotificationUrgency.Critical) return false;
+        root.missedWhilePlaying++;
+        return true;
+    }
     // Switch the open Control Centre to a page (qs ipc call notch page N).
     signal controlGo(int n)
     property var lastNotif: null
@@ -62,12 +73,12 @@ Singleton {
             // A shell reload hands back the notifications it kept (keepOnReload)
             // through here again: they go back to the history, but the notch
             // must not announce them a second time.
-            if (!root.dnd && !n.lastGeneration) root.announce(n);
+            if (!n.lastGeneration && !root.quiet(n)) root.announce(n);
             // A card updated in place (`notch ... --replace ID`, notify-send -r)
             // keeps the same object: show it again with its new text.
             const again = function () {
                 root.stampNotif(n);
-                if (root.dnd) return;
+                if (root.dnd || (root.quietForGame && n.urgency !== NotificationUrgency.Critical)) return;
                 root.lastNotif = n;
                 root.announce(n);
             };

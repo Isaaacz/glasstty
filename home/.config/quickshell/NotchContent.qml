@@ -944,6 +944,77 @@ Item {
         PowerPanel { anchors.fill: parent }
     }
 
+    // ─────────────── gamesum: the game you just closed ───────────────
+    // How long you played and how it ran (GameMode.lastSession), and how many
+    // notices waited quietly meanwhile.
+    NotchLayer {
+        id: sumLayer
+        anchors.fill: parent
+        active: root.mode === "gamesum"
+        readonly property var s: GameMode.lastSession
+
+        RowLayout {
+            anchors { fill: parent; leftMargin: 18; rightMargin: 18; topMargin: 6 }
+            spacing: 13
+            Rectangle {
+                Layout.preferredWidth: 38
+                Layout.preferredHeight: 38
+                radius: 12
+                color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.20)
+                Text {
+                    anchors.centerIn: parent
+                    text: Icons.gamepad
+                    color: Colors.accentInk
+                    font.family: Appearance.font
+                    font.pixelSize: 19
+                }
+            }
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 2
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+                    Text {
+                        Layout.fillWidth: true
+                        elide: Text.ElideRight
+                        text: sumLayer.s ? sumLayer.s.name : ""
+                        color: Colors.label
+                        font.family: Appearance.fontUI
+                        font.pixelSize: Appearance.fsM
+                        font.weight: Font.DemiBold
+                    }
+                    Text {
+                        text: sumLayer.s ? GameMode.duration(sumLayer.s.mins) : ""
+                        color: Colors.accentInk
+                        font.family: Appearance.fontUI
+                        font.pixelSize: Appearance.fsS
+                        font.weight: Font.DemiBold
+                        font.features: ({ "tnum": 1 })
+                    }
+                }
+                Text {
+                    Layout.fillWidth: true
+                    elide: Text.ElideRight
+                    text: {
+                        const s = sumLayer.s;
+                        if (!s) return "";
+                        const bits = [];
+                        if (s.avg > 0) bits.push(I18n.tr("media {0} fps", s.avg), I18n.tr("mín. {0}", s.min));
+                        if (s.cpu > 0) bits.push("CPU " + s.cpu + "°");
+                        if (s.gpu > 0) bits.push("GPU " + s.gpu + "°");
+                        if (s.missed > 0) bits.push(I18n.tr("{0} avisos", s.missed));
+                        return bits.length ? bits.join("  ·  ") : I18n.tr("Partida terminada");
+                    }
+                    color: Colors.label3
+                    font.family: Appearance.fontUI
+                    font.pixelSize: Appearance.fsXS
+                    font.features: ({ "tnum": 1 })
+                }
+            }
+        }
+    }
+
     // ─────────────── display: laptop screen / TV ───────────────
     NotchLayer {
         anchors.fill: parent

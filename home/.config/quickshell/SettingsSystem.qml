@@ -118,10 +118,18 @@ Flickable {
             }
             SettingsControls.Row_ {
                 label: I18n.tr("Modo juego automático")
-                hint: I18n.tr("Activa el modo juego al abrir un juego de Steam y lo apaga al cerrarlo. Si lo enciendes a mano, se queda encendido.")
+                hint: I18n.tr("Activa el modo juego al abrir un juego de Steam y lo apaga al cerrarlo. Si lo cambias a mano durante el juego, queda como lo dejaste.")
                 SettingsControls.Switch_ {
                     checked: Config.gameAuto
                     onToggled: function(v) { Config.gameAuto = v; Config.save(); }
+                }
+            }
+            SettingsControls.Row_ {
+                label: I18n.tr("Silenciar avisos al jugar")
+                hint: I18n.tr("Mientras juegas los avisos van directo al historial, salvo los críticos. Al cerrar el juego, el resumen dice cuántos llegaron. Super+Shift+G muestra el rendimiento sobre el juego.")
+                SettingsControls.Switch_ {
+                    checked: Config.gameDnd
+                    onToggled: function(v) { Config.gameDnd = v; Config.save(); }
                 }
             }
             SettingsControls.Row_ {

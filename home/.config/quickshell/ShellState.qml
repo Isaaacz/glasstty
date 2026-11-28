@@ -179,6 +179,7 @@ Singleton {
             : kind === "ws" ? 1100
             : kind === "charge" ? 2200
             : kind === "device" ? 2600
+            : kind === "gamesum" ? 9000
             : 1800;
         // Covered does not count. The only one that gets here with a panel in
         // front is the "Copiado" receipt, and onPanelChanged starts its clock on
@@ -205,6 +206,7 @@ Singleton {
         : activity === "ws" ? "ws"
         : activity === "charge" ? "charge"
         : activity === "device" ? "device"
+        : activity === "gamesum" ? "gamesum"
         : activity !== "" ? "activity"
         : hovered ? "peek"
         : mediaLive ? "media" : "idle"
@@ -250,6 +252,7 @@ Singleton {
         : mode === "ws" ? 220
         : mode === "charge" ? 260
         : mode === "device" ? 340
+        : mode === "gamesum" ? 470
         : mode === "track" ? 400
         : mode === "peek" ? 380
         : mode === "activity" ? 330
@@ -349,6 +352,7 @@ Singleton {
         : mode === "ws" ? 44
         : mode === "charge" ? 46
         : mode === "device" ? 46
+        : mode === "gamesum" ? 72
         : mode === "track" ? 52
         : mode === "peek" ? 44
         : mode === "activity" ? 42

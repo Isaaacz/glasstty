@@ -29,6 +29,8 @@ Singleton {
     property alias batteryAllowIdle: opts.batteryAllowIdle
     // Game mode turns itself on while a Steam game runs (GameMode.qml).
     property alias gameAuto: opts.gameAuto
+    // Notices stay quiet while you play (NotificationCenter.quietForGame).
+    property alias gameDnd: opts.gameDnd
     property alias dimOnSaver: opts.dimOnSaver
     property alias saverBrightness: opts.saverBrightness
     // Temporary state; it never modifies the saved appearance preference.
@@ -499,6 +501,7 @@ Singleton {
             property string energyOnBattery: "power-saver"
             property bool batteryAllowIdle: true
             property bool gameAuto: true
+            property bool gameDnd: true
             property bool dimOnSaver: true
             property int saverBrightness: 40
 

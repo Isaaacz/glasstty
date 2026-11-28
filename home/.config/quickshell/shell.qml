@@ -20,6 +20,7 @@ Scope {
     IdleDim {}          // the screen fades to dark before the idle lock
     NotifDrops {}       // notifications as drops falling out of the notch
     BatteryWatch {}     // low-battery warnings at 20, 10 and 5 %
+    GameOverlay {}      // performance over the game (Super+Shift+G) and the heat warning
     ExitScreen {}       // full-screen exit screen (Super+Shift+E, power key)
     Screenshot {}       // Print: GNOME-style capture screen
 

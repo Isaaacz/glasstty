@@ -906,8 +906,12 @@ Scope {
                         readonly property bool low: GameMode.gameRunning && GameMode.gameFps < 30
                         icon: Icons.gamepad
                         iconColor: Colors.accent
-                        label: !GameMode.gameRunning ? ""
-                            : GameMode.gameFps + " fps  ·  CPU " + GameMode.gameCpu + "%"
+                        // the game's name (from Steam), cut short, then the numbers
+                        readonly property string shortName: GameMode.gameName.length > 22
+                            ? GameMode.gameName.slice(0, 21).trim() + "…" : GameMode.gameName
+                        label: !GameMode.gameRunning ? gameItem.shortName
+                            : (gameItem.shortName !== "" ? gameItem.shortName + "  ·  " : "")
+                              + GameMode.gameFps + " fps  ·  CPU " + GameMode.gameCpu + "%"
                               + "  ·  GPU " + GameMode.gameGpu + "%"
                               + (GameMode.gameCpuTemp > 0 ? "  ·  " + GameMode.gameCpuTemp + "°" : "")
                         labelColor: gameItem.low ? Colors.crit : Colors.fg

@@ -148,12 +148,18 @@ Singleton {
         interval: 3000
         repeat: true
         triggeredOnStart: true
-        running: ShellState.mediaLive
+        // not while you play: the notch steps aside in fullscreen, so the
+        // bars would be drawn for nobody and cava's FFT would cost for nothing
+        running: ShellState.mediaLive && !GameMode.playing
         onTriggered: cavaProc.running = true
     }
     Connections {
         target: ShellState
         function onMediaLiveChanged() { if (!ShellState.mediaLive) cavaProc.running = false; }
+    }
+    Connections {
+        target: GameMode
+        function onPlayingChanged() { if (GameMode.playing) cavaProc.running = false; }
     }
 
     Process {

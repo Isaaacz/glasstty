@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Game mode reader. Emits one line per second:
-#   1 fps frametime_ms cpu_load gpu_load cpu_temp gpu_temp   a game is running
+#   1 fps frametime_ms cpu_load gpu_load cpu_temp gpu_temp ram_gib vram_gib
+#                                                             a game is running
 #   0                                                         no game right now
 #
 # The numbers come from MangoHud, not from us: only the game process knows its
@@ -27,8 +28,9 @@ while true; do
       END {
         if (last == "") exit
         n = split(last, v, ",")
-        printf "1 %d %.1f %d %d %d %d\n", v[col["fps"]], v[col["frametime"]],
-          v[col["cpu_load"]], v[col["gpu_load"]], v[col["cpu_temp"]], v[col["gpu_temp"]]
+        printf "1 %d %.1f %d %d %d %d %.2f %.2f\n", v[col["fps"]], v[col["frametime"]],
+          v[col["cpu_load"]], v[col["gpu_load"]], v[col["cpu_temp"]], v[col["gpu_temp"]],
+          ("ram_used" in col) ? v[col["ram_used"]] : 0, ("gpu_vram_used" in col) ? v[col["gpu_vram_used"]] : 0
       }' "$f")
     echo "${line:-0}"
   else
