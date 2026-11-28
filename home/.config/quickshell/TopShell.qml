@@ -67,7 +67,7 @@ Scope {
     // The panels that ask for the keyboard. It lives up here because it governs
     // TWO things that had to go together and did not: the layer's
     // keyboardFocus and the re-arming of the "click outside = close" grab.
-    readonly property var panelesConTeclado: ["launcher", "power", "network", "bluetooth",
+    readonly property var panelesConTeclado: ["launcher", "power", "display", "network", "bluetooth",
                                               "overview", "system", "calendar", "github"]
     readonly property bool pideTeclado: root.panelesConTeclado.indexOf(ShellState.panel) >= 0
 
@@ -115,6 +115,8 @@ Scope {
         // `qs ipc call notch <function>` instead.
         function actions(): void { Launcher.openLauncher("cmd"); }
         function calendar(): void { ShellState.togglePanel("calendar"); }
+        // How the laptop screen and a TV / monitor share the picture (Mod+P).
+        function display(): void { ShellState.togglePanel("display"); }
         function bar(): void { root.shown = !root.shown; }
         function control(): void { ShellState.togglePanel("control"); }
         // The Control Centre straight on a page: 0 painel, 1 wallpapers, 2 sistema, 3 cores.
@@ -169,8 +171,13 @@ Scope {
         // able to SEE them while working on the design without having to plug
         // in a charger or wait for the song to change.
         function osd(kind: string): void {
-            const ok = ["volume", "brightness", "track", "charge", "ws", "toast", "notif"];
+            const ok = ["volume", "brightness", "track", "charge", "device", "ws", "toast", "notif"];
             ShellState.flash(ok.indexOf(kind) >= 0 ? kind : "volume");
+        }
+        // The "device" face for something plugged in or out, from a script
+        // (or to try it): notch plugged "Pendrive" "󰋊" true
+        function plugged(name: string, icon: string, on: bool): void {
+            Devices.announce(icon || "󰕓", name, on, null);
         }
         // Bluetooth pairing. Called by scripts/bt-agent.py, which is what
         // receives BlueZ's questions (QML cannot export D-Bus objects).
@@ -906,6 +913,29 @@ Scope {
                         labelColor: gameItem.low ? Colors.crit : Colors.fg
                         onClicked: GameMode.toggleGameMode()
                     }
+
+                    // The battery of each connected device that reports one
+                        // (headphones, mouse, controller…), from Devices.qml.
+                        // Nothing connected, nothing shown. Click: Bluetooth.
+                        Row {
+                            id: devItem
+                            parent: win.slotFor("devices")
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: Devices.batteries.length > 0 && win.shows("devices")
+                            spacing: 2
+                            Repeater {
+                                model: Devices.batteries
+                                BarItem {
+                                    required property var modelData
+                                    readonly property bool low: modelData.pct <= 15
+                                    icon: modelData.icon
+                                    label: modelData.pct + "%"
+                                    iconColor: low ? Colors.crit : Colors.fg
+                                    labelColor: low ? Colors.crit : Colors.fg
+                                    onClicked: ShellState.togglePanel("bluetooth")
+                                }
+                            }
+                        }
 
                     BarItem {
                         id: battItem

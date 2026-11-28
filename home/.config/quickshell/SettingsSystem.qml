@@ -117,6 +117,14 @@ Flickable {
                 }
             }
             SettingsControls.Row_ {
+                label: I18n.tr("Modo juego automático")
+                hint: I18n.tr("Activa el modo juego al abrir un juego de Steam y lo apaga al cerrarlo. Si lo enciendes a mano, se queda encendido.")
+                SettingsControls.Switch_ {
+                    checked: Config.gameAuto
+                    onToggled: function(v) { Config.gameAuto = v; Config.save(); }
+                }
+            }
+            SettingsControls.Row_ {
                 shown: SystemStats.batt >= 0
                 label: I18n.tr("Permitir reposo con batería")
                 hint: I18n.tr("Quita Cafeína al desenchufar: deja atenuar, bloquear, apagar la pantalla y suspender según tus tiempos de inactividad. Al enchufar restaura Cafeína. Puedes encenderla manualmente en el notch.")

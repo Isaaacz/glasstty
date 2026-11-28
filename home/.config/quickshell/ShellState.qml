@@ -50,7 +50,7 @@ Singleton {
     // ~/.local/share/glasstty/extras/); read and reset by ControlPanel. See
     // `notch extra`.
     property string controlExtra: ""
-    property string panel: ""     // "" | "control" | "system" | "launcher" | "power" | "network" | "bluetooth" | "overview" | "calendar" | "github"
+    property string panel: ""     // "" | "control" | "system" | "launcher" | "power" | "display" | "network" | "bluetooth" | "overview" | "calendar" | "github"
     readonly property bool open: panel !== ""
 
     // The edge-revealed organiser is independent of the notch and remembers
@@ -178,6 +178,7 @@ Singleton {
             : kind === "toast" ? 1600
             : kind === "ws" ? 1100
             : kind === "charge" ? 2200
+            : kind === "device" ? 2600
             : 1800;
         // Covered does not count. The only one that gets here with a panel in
         // front is the "Copiado" receipt, and onPanelChanged starts its clock on
@@ -203,6 +204,7 @@ Singleton {
         : activity === "track" ? "track"
         : activity === "ws" ? "ws"
         : activity === "charge" ? "charge"
+        : activity === "device" ? "device"
         : activity !== "" ? "activity"
         : hovered ? "peek"
         : mediaLive ? "media" : "idle"
@@ -237,6 +239,7 @@ Singleton {
         : mode === "system" ? 920
         : mode === "network" || mode === "bluetooth" ? 470
         : mode === "power" ? 520
+        : mode === "display" ? 560
         : mode === "calendar" ? 350
         // 53 columns of 9 px with 2 of air = 581, plus the column of weekday
         // initials and the margin. The whole year cannot get narrower without
@@ -246,6 +249,7 @@ Singleton {
         : mode === "toast" ? 330
         : mode === "ws" ? 220
         : mode === "charge" ? 260
+        : mode === "device" ? 340
         : mode === "track" ? 400
         : mode === "peek" ? 380
         : mode === "activity" ? 330
@@ -325,7 +329,7 @@ Singleton {
     // someone to remove a spacer. Now there is a single list and it lives here,
     // so adding a panel face does not rely on remembering.
     readonly property var carasDePanel: ["launcher", "btpair", "overview", "control", "system",
-                                         "network", "bluetooth", "power", "calendar", "github"]
+                                         "network", "bluetooth", "power", "display", "calendar", "github"]
     readonly property int notchGapDeCara: root.carasDePanel.indexOf(root.mode) >= 0 ? root.notchTopGap : 0
 
     readonly property int notchH: root.notchBaseH + root.notchGapDeCara
@@ -337,12 +341,14 @@ Singleton {
         : mode === "system" ? 420
         : mode === "network" || mode === "bluetooth" ? 412
         : mode === "power" ? 158
+        : mode === "display" ? 158
         : mode === "calendar" ? 320
         : mode === "github" ? 318
         : mode === "notif" ? 66
         : mode === "toast" ? 44
         : mode === "ws" ? 44
         : mode === "charge" ? 46
+        : mode === "device" ? 46
         : mode === "track" ? 52
         : mode === "peek" ? 44
         : mode === "activity" ? 42
@@ -590,5 +596,6 @@ Singleton {
             onRead: function (line) { root.promptEnv = line.trim() === "on"; }
         }
     }
+
 
 }

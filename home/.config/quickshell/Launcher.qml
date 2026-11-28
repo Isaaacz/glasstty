@@ -554,9 +554,38 @@ Singleton {
         ShellState.flash("toast");
     }
 
+    // A window of `app` that is already open, or null. Matched on the entry's
+    // StartupWMClass, or on the last part of its id (org.gnome.Nautilus ->
+    // nautilus), against the window's app_id, ignoring case. Among several
+    // (Steam has its main window plus Friends, chats…) the one titled like
+    // the app wins.
+    function openWindowOf(app) {
+        const keys = [app.startupClass || "", String(app.id || "").replace(/\.desktop$/, "").split(".").pop()]
+            .filter(k => k !== "").map(k => k.toLowerCase());
+        const ws = Compositor.toplevels;
+        let best = null;
+        for (let i = 0; i < ws.length; i++) {
+            const c = ws[i].lastIpcObject;
+            const cls = String(c && c["class"] || "").toLowerCase();
+            if (cls === "" || keys.indexOf(cls) < 0) continue;
+            if (!best || (c.title || "") === app.name) best = ws[i];
+        }
+        return best;
+    }
+
     function launchApp(app) {
         if (!app) return;
         ShellState.closePanel();
+        // Already running: go to it. Starting it again only pokes the running
+        // instance (Steam, Discord, browsers…), which does not raise anything
+        // on niri, so it looked like the click did nothing.
+        const open = root.openWindowOf(app);
+        if (open) {
+            root.winPending = open.address;
+            winFocusDefer.restart();
+            if (Config.learnLauncher) LauncherUsage.record(app.id);
+            return;
+        }
         app.execute();
         if (Config.learnLauncher) LauncherUsage.record(app.id);
     }

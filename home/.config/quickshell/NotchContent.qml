@@ -51,6 +51,7 @@ Item {
                     font.pixelSize: Appearance.clockPixelSize(Config.clockSize)
                     font.weight: Font.DemiBold
                     font.features: ({ "tnum": 1 })   // fixed-width digits: no jitter when the minute changes
+
                 }
             }
 
@@ -437,6 +438,58 @@ Item {
                 color: chargeLayer.tone
                 font.family: Appearance.fontUI
                 font.pixelSize: 15
+                font.weight: Font.DemiBold
+                font.features: ({ "tnum": 1 })
+            }
+        }
+    }
+
+    // ─────────────── device: something plugged in or out ───────────────
+    // USB or Bluetooth (Devices.qml). Like the charge face it is something
+    // that happened, not something you did, so it lingers a little.
+    NotchLayer {
+        id: deviceLayer
+        anchors.fill: parent
+        active: root.mode === "device"
+
+        readonly property var d: Devices.last
+        readonly property bool on: deviceLayer.d ? deviceLayer.d.plugged : false
+        readonly property var dev: deviceLayer.d ? deviceLayer.d.dev : null
+        readonly property int pct: deviceLayer.dev && deviceLayer.dev.batteryAvailable
+            ? Math.round(deviceLayer.dev.battery * 100) : -1
+
+        RowLayout {
+            anchors { fill: parent; leftMargin: 18; rightMargin: 18 }
+            spacing: 11
+
+            Rectangle {
+                Layout.preferredWidth: 28
+                Layout.preferredHeight: 28
+                radius: 14
+                color: deviceLayer.on ? Qt.rgba(Colors.ok.r, Colors.ok.g, Colors.ok.b, 0.20) : Colors.fill2
+                Text {
+                    anchors.centerIn: parent
+                    text: deviceLayer.d ? deviceLayer.d.icon : ""
+                    color: deviceLayer.on ? Colors.ok : Colors.label3
+                    font.family: Appearance.font
+                    font.pixelSize: 16
+                }
+            }
+            Text {
+                Layout.fillWidth: true
+                elide: Text.ElideRight
+                text: deviceLayer.d ? deviceLayer.d.name : ""
+                color: Colors.label
+                font.family: Appearance.fontUI
+                font.pixelSize: Appearance.fsM
+                font.weight: Font.Medium
+            }
+            Text {
+                text: deviceLayer.pct >= 0 && deviceLayer.on ? I18n.tr("{0} %", deviceLayer.pct)
+                    : deviceLayer.on ? I18n.tr("Conectado") : I18n.tr("Desconectado")
+                color: deviceLayer.on ? (deviceLayer.pct >= 0 && deviceLayer.pct <= 15 ? Colors.crit : Colors.ok) : Colors.label3
+                font.family: Appearance.fontUI
+                font.pixelSize: Appearance.fsS
                 font.weight: Font.DemiBold
                 font.features: ({ "tnum": 1 })
             }
@@ -889,6 +942,13 @@ Item {
         active: root.mode === "power"
         origin: 1   // its icon is on the right
         PowerPanel { anchors.fill: parent }
+    }
+
+    // ─────────────── display: laptop screen / TV ───────────────
+    NotchLayer {
+        anchors.fill: parent
+        active: root.mode === "display"
+        DisplayPanel { anchors.fill: parent }
     }
 
     // ─────────────── calendar: the month's calendar ───────────────

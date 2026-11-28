@@ -12,7 +12,7 @@ ColumnLayout {
     id: ed
     spacing: 8
 
-    readonly property var allKeys: ["logo", "workspaces", "app", "date", "game", "battery"]
+    readonly property var allKeys: ["logo", "workspaces", "app", "date", "game", "devices", "battery"]
     readonly property var v: AppearanceDraft.v
 
     function flagOf(k) {
@@ -30,6 +30,7 @@ ColumnLayout {
         case "app": return { icon: "󰣆", label: I18n.tr("Nombre de la app") };
         case "date": return { icon: "󰃭", label: I18n.tr("Fecha") };
         case "game": return { icon: Icons.gamepad, label: I18n.tr("Modo juego") };
+        case "devices": return { icon: "󰂯", label: I18n.tr("Dispositivos") };
         case "battery": return { icon: "󰁹", label: I18n.tr("Batería") };
         }
         return { icon: "", label: k };

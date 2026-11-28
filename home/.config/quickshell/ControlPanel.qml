@@ -740,7 +740,7 @@ Item {
                         readonly property color kindColor: NotificationCenter.notifKindColor(nrow.kind)
                         readonly property string pic: NotificationCenter.notifImage(nrow.n)
                         readonly property int dupes: NotificationCenter.notifDupes(nrow.n).length
-                        readonly property bool crit: nrow.n.urgency === NotificationUrgency.Critical
+                        readonly property bool crit: nrow.n !== null && nrow.n.urgency === NotificationUrgency.Critical
                         // `notch` cards and the shell's own notices say nothing with
                         // their app name; real applications do.
                         readonly property string app: (nrow.kind !== "" || nrow.n.appName === "notch") ? ""

@@ -27,6 +27,8 @@ Singleton {
     property alias energyOnAC: opts.energyOnAC
     property alias energyOnBattery: opts.energyOnBattery
     property alias batteryAllowIdle: opts.batteryAllowIdle
+    // Game mode turns itself on while a Steam game runs (GameMode.qml).
+    property alias gameAuto: opts.gameAuto
     property alias dimOnSaver: opts.dimOnSaver
     property alias saverBrightness: opts.saverBrightness
     // Temporary state; it never modifies the saved appearance preference.
@@ -44,7 +46,7 @@ Singleton {
     // The bar (Settings › Appearance › Bar): the workspace indicator's style
     // ("dots" = the fluid | "numbers" | "roman" | "pills" | "icons") and which
     // modules sit on the left and on the right, in order. Keys: "logo",
-    // "workspaces", "app", "date", "game", "battery"; a module in neither list
+    // "workspaces", "app", "date", "game", "devices", "battery"; a module in neither list
     // is not shown. The centre belongs to the notch.
     property alias wsStyle: opts.wsStyle
     property alias barLeft: opts.barLeft
@@ -448,7 +450,7 @@ Singleton {
             notifStyle: "drops",
             wsStyle: "dots",
             barLeft: ["logo", "workspaces", "app"],
-            barRight: ["game", "battery"],
+            barRight: ["game", "devices", "battery"],
             notifSeconds: 4.2,
             dropHeight: 58,
             dropWidth: 460,
@@ -496,6 +498,7 @@ Singleton {
             property string energyOnAC: "performance"
             property string energyOnBattery: "power-saver"
             property bool batteryAllowIdle: true
+            property bool gameAuto: true
             property bool dimOnSaver: true
             property int saverBrightness: 40
 
@@ -504,7 +507,7 @@ Singleton {
             property string notifStyle: "drops"
             property string wsStyle: "dots"
             property var barLeft: ["logo", "workspaces", "app"]
-            property var barRight: ["game", "battery"]
+            property var barRight: ["game", "devices", "battery"]
             property real notifSeconds: 4.2
             property int dropHeight: 58
             property int dropWidth: 460
