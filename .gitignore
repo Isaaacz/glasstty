@@ -150,6 +150,11 @@ home/.config/systemd/user/*.wants/
 # Without this line, './install.sh --lang en' wrote inside the repo itself
 # -in --link mode, ~/.config/glasstty IS the repo- and left git dirty.
 home/.config/glasstty/language.conf
+# The Settings app's state (Config.qml): every switch you flip is written
+# there, so it is yours, not the rice's. The defaults live in Config.qml and
+# the file is created with them on first start; it is no longer linked from
+# the repo (2026-11-28), and this keeps an old link from bringing it back.
+home/.config/quickshell-rice.json
 # Same thing, for the same reason: the switch in Ajustes > Apariencia > Efectos
 # (Settings > Appearance > Effects) writes it every time you touch it, and in
 # --link mode that lands inside the repo. The defaults already live, versioned,

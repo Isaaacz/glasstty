@@ -16,12 +16,18 @@ warn() { printf '  \033[33m!\033[0m %s\n' "$1"; }
 no()   { printf '  \033[31m✗\033[0m %s\n' "$1"; bad=$((bad + 1)); }
 
 echo "links into this repo"
-for p in quickshell niri/config.kdl quickshell-rice.json glasstty kitty fastfetch; do
+for p in quickshell niri/config.kdl glasstty kitty fastfetch; do
     t="$cfg/$p"
     if [ -L "$t" ] && [ "$(readlink -f "$t")" = "$(readlink -f "$repo/home/.config/$p")" ]; then ok "$t"
     elif [ -e "$t" ]; then no "$t exists but is not linked to this repo"
     else no "$t is missing"; fi
 done
+
+# Your settings: a file of your own, created by the shell on first start.
+t="$cfg/quickshell-rice.json"
+if [ -L "$t" ]; then warn "$t is still a link (old install): settings would write into the repo"
+elif [ -f "$t" ]; then ok "$t (your settings)"
+else warn "$t not created yet (the shell writes it on first start)"; fi
 
 echo "copies"
 for f in niri.service.d/oo7.conf niri.service.d/theme-env.conf \

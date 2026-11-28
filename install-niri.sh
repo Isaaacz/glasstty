@@ -296,7 +296,8 @@ step="links"
 say "links into $cfg"
 link "$repo/home/.config/quickshell"            "$cfg/quickshell"
 link "$repo/home/.config/niri/config.kdl"       "$cfg/niri/config.kdl"
-link "$repo/home/.config/quickshell-rice.json"  "$cfg/quickshell-rice.json"
+# quickshell-rice.json is NOT linked: it is the Settings app's state, yours.
+# The shell creates it with Config.qml's defaults on first start.
 link "$repo/home/.config/glasstty"              "$cfg/glasstty"
 link "$repo/home/.config/kitty"                 "$cfg/kitty"
 link "$repo/home/.config/fastfetch"             "$cfg/fastfetch"

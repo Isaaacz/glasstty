@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+**Heads-up before you pull**
+- `~/.config/quickshell-rice.json` (your Settings) is no longer kept in the
+  repo nor linked from it: it is your own file now. If yours is still a link
+  into the repo, copy it out first, or the pull removes it:
+  `cp --remove-destination "$(readlink -f ~/.config/quickshell-rice.json)" ~/.config/quickshell-rice.json`.
+  A fresh install gets it created with the defaults on first start.
+- Machine-specific niri rules go in `~/.config/niri/local.kdl`, which
+  `config.kdl` includes last; nothing there touches the repo.
+
 **New**
 - **Cards from the notch:** `notch ok|warn|fail|info` shows a coloured card
   from the notch, with buttons that answer back to a script (`--yes`/`--no`),

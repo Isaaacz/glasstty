@@ -380,3 +380,8 @@ binds {
 // Runtime-written pieces (see the header). Optional: missing on first boot.
 include optional=true "~/.cache/wal/colors-niri.kdl"
 include optional=true "efeitos.kdl"
+
+// Your own rules, last so they win: ~/.config/niri/local.kdl, next to this
+// file and outside the repo (a game's window rule, a monitor's mode...).
+// Optional: most machines will not have one.
+include optional=true "local.kdl"
