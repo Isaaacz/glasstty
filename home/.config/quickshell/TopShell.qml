@@ -117,6 +117,13 @@ Scope {
         function calendar(): void { ShellState.togglePanel("calendar"); }
         // How the laptop screen and a TV / monitor share the picture (Mod+P).
         function display(): void { ShellState.togglePanel("display"); }
+        // The blinking dot beside the clock (ShellState.notchDot): a colour,
+        // and a shell command to run when it is clicked ("" = none).
+        function dot(color: string, cmd: string): void {
+            ShellState.notchDotCmd = cmd || "";
+            ShellState.notchDot = color || "#fbbf24";
+        }
+        function undot(): void { ShellState.notchDot = ""; ShellState.notchDotCmd = ""; }
         function bar(): void { root.shown = !root.shown; }
         function control(): void { ShellState.togglePanel("control"); }
         // The Control Centre straight on a page: 0 painel, 1 wallpapers, 2 sistema, 3 cores.

@@ -52,6 +52,31 @@ Item {
                     font.weight: Font.DemiBold
                     font.features: ({ "tnum": 1 })   // fixed-width digits: no jitter when the minute changes
 
+                    // The notch dot (ShellState.notchDot): hangs off the clock's
+                    // right edge without taking room, so the time stays centred.
+                    Rectangle {
+                        id: notchDot
+                        readonly property bool on: ShellState.notchDot !== ""
+                        x: parent.width + 6
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.verticalCenterOffset: -Appearance.clockNudge(Config.clockSize)
+                        width: 7; height: 7; radius: 3.5
+                        color: notchDot.on ? ShellState.notchDot : "transparent"
+                        visible: notchDot.on
+                        SequentialAnimation on opacity {
+                            running: notchDot.on
+                            loops: Animation.Infinite
+                            NumberAnimation { to: 0.2; duration: 750; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 1; duration: 750; easing.type: Easing.InOutSine }
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            anchors.margins: -7
+                            enabled: ShellState.notchDotCmd !== ""
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: Quickshell.execDetached(["sh", "-c", ShellState.notchDotCmd])
+                        }
+                    }
                 }
             }
 

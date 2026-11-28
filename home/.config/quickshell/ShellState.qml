@@ -601,5 +601,11 @@ Singleton {
         }
     }
 
+    // ══════════════════════ notch dot ═══════════════════════
+    // A blinking dot beside the clock that any script can light up through
+    // `qs ipc call notch dot COLOR COMMAND` (and put out with `notch undot`):
+    // a background job asking for a look. Clicking it runs COMMAND, if any.
+    property string notchDot: ""        // a colour; "" = off
+    property string notchDotCmd: ""
 
 }
