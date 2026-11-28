@@ -78,6 +78,8 @@ for p in quickshell niri/config.kdl quickshell-rice.json glasstty kitty fastfetc
          spicetify/Themes spicetify/Extensions; do
     unlink_repo "$cfg/$p"
 done
+# the shell side, linked into ~/.bashrc.d (Fedora's ~/.bashrc sources it)
+unlink_repo "$HOME/.bashrc.d/glasstty.bash"
 for b in "$repo"/home/.local/bin/*; do
     p="$HOME/.local/bin/$(basename "$b")"
     [ -L "$p" ] && [[ "$(readlink -f "$p")" == "$repo"/* ]] && unlink_repo "$p"
@@ -126,7 +128,8 @@ done
 
 # Folders the installer created and that are now empty.
 for d in "$dc/niri.d/locks" "$dc/niri.d" "$dc" "$cfg/niri" "$sd"/niri.service.d "$sd"/xdg-desktop-portal-gnome.service.d \
-         "$sd"/xdg-desktop-portal-gtk.service.d "$cfg/spicetify" "$cfg/wal/templates" "$cfg/wal"; do
+         "$sd"/xdg-desktop-portal-gtk.service.d "$cfg/spicetify" "$cfg/wal/templates" "$cfg/wal" \
+         "$HOME/.bashrc.d"; do
     if [ -d "$d" ] && [ ! -L "$d" ] && [ -z "$(ls -A "$d")" ]; then run rmdir -- "$d"; fi
 done
 
