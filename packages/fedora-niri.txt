@@ -59,6 +59,11 @@ xwayland-satellite
 kitty
 nautilus
 fastfetch
+# --- the shell (glasstty/shell/glasstty.bash): each is optional
+eza
+bat
+zoxide
+fzf
 # satty (screenshot editor) and hyprpicker (colour picker) are not in
 # Fedora 45: install them yourself if you want them (cargo / COPR). The
 # capture screen does not need them; "Editar" on a screenshot needs satty.

@@ -143,6 +143,42 @@ Flickable {
             }
         }
 
+        // ─────────────────── terminal ───────────────────
+        // Extras for kitty + bash (glasstty/shell/glasstty.bash), all off by
+        // default. They apply to terminals opened after the change.
+        SettingsControls.Card_ {
+            title: I18n.tr("Terminal")
+
+            component TermSwitch: SettingsControls.Row_ {
+                id: ts
+                property string key: ""
+                SettingsControls.Switch_ {
+                    checked: Config[ts.key]
+                    onToggled: function(v) { Config[ts.key] = v; Config.save(); Config.writeTerminal(); }
+                }
+            }
+            TermSwitch {
+                key: "termPrompt"
+                label: I18n.tr("Prompt de glasstty")
+                hint: I18n.tr("Carpeta, rama de git con sus cambios, tiempo del último comando y la flecha en rojo si falló, con los colores del fondo.")
+            }
+            TermSwitch {
+                key: "termTools"
+                label: I18n.tr("Herramientas modernas")
+                hint: I18n.tr("ls con iconos (eza), cat con colores (bat), z para saltar entre carpetas (zoxide) y Ctrl+R para buscar en el historial (fzf). Cada una solo si está instalada.")
+            }
+            TermSwitch {
+                key: "termFetch"
+                label: I18n.tr("Fastfetch al abrir")
+                hint: I18n.tr("Un resumen compacto del sistema en cada ventana nueva de kitty.")
+            }
+            TermSwitch {
+                key: "termNotify"
+                label: I18n.tr("Avisar cuando termina un comando largo")
+                hint: I18n.tr("Un comando de 15 s o más que termina con kitty en segundo plano manda un aviso que sale del notch. Solo en ventanas de kitty abiertas después.")
+            }
+        }
+
         // ─────────────────── power ───────────────────
         SettingsControls.Card_ {
             id: cPower

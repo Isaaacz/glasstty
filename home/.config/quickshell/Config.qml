@@ -31,6 +31,22 @@ Singleton {
     property alias gameAuto: opts.gameAuto
     // Notices stay quiet while you play (NotificationCenter.quietForGame).
     property alias gameDnd: opts.gameDnd
+    // Terminal extras (Settings › System › Terminal), all off by default:
+    // glasstty's prompt, eza/bat/zoxide/fzf, the fastfetch greeting and kitty's
+    // notice when a long command ends. Bash and kitty cannot read this JSON,
+    // so writeTerminal() mirrors them into ~/.local/state/glasstty/.
+    property alias termPrompt: opts.termPrompt
+    property alias termTools: opts.termTools
+    property alias termFetch: opts.termFetch
+    property alias termNotify: opts.termNotify
+    function writeTerminal() {
+        const b = v => v ? "1" : "0";
+        Quickshell.execDetached(["sh", "-c",
+            'd="${XDG_STATE_HOME:-$HOME/.local/state}/glasstty"; mkdir -p "$d" && '
+            + 'printf "GT_PROMPT=%s\\nGT_TOOLS=%s\\nGT_FETCH=%s\\n" "$1" "$2" "$3" > "$d/terminal.sh" && '
+            + 'if [ "$4" = 1 ]; then echo "notify_on_cmd_finish unfocused 15.0" > "$d/kitty.conf"; else : > "$d/kitty.conf"; fi',
+            "sh", b(root.termPrompt), b(root.termTools), b(root.termFetch), b(root.termNotify)]);
+    }
     property alias dimOnSaver: opts.dimOnSaver
     property alias saverBrightness: opts.saverBrightness
     // Temporary state; it never modifies the saved appearance preference.
@@ -502,6 +518,10 @@ Singleton {
             property bool batteryAllowIdle: true
             property bool gameAuto: true
             property bool gameDnd: true
+            property bool termPrompt: false
+            property bool termTools: false
+            property bool termFetch: false
+            property bool termNotify: false
             property bool dimOnSaver: true
             property int saverBrightness: 40
 

@@ -300,6 +300,9 @@ link "$repo/home/.config/quickshell-rice.json"  "$cfg/quickshell-rice.json"
 link "$repo/home/.config/glasstty"              "$cfg/glasstty"
 link "$repo/home/.config/kitty"                 "$cfg/kitty"
 link "$repo/home/.config/fastfetch"             "$cfg/fastfetch"
+# The shell side (prompt, eza/bat/zoxide/fzf, greeting): Fedora's ~/.bashrc
+# sources every file in ~/.bashrc.d. A file of yours with that name wins.
+link_keep "$repo/home/.config/glasstty/shell/glasstty.bash" "$HOME/.bashrc.d/glasstty.bash"
 
 step="wal templates"
 say "wal templates -> $cfg/wal/templates"
