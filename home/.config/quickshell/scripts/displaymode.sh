@@ -27,7 +27,16 @@ print(i, e, on(i), on(e))
 ')
 
 mirroring() { pgrep -x wl-mirror >/dev/null; }
-stop_mirror() { pkill -x wl-mirror 2>/dev/null; true; }
+# While mirroring, the external output is moved far away from the laptop's:
+# niri only lets the pointer cross into an output that touches the current
+# one, so the cursor stays on the laptop instead of wandering onto the copy.
+# Every other mode puts it back next to the laptop.
+stop_mirror() {
+    pkill -x wl-mirror 2>/dev/null
+    [ "$int" != - ] && niri msg output "$int" position auto
+    [ "$ext" != - ] && niri msg output "$ext" position auto
+    true
+}
 
 if [ "${1:-status}" = status ]; then
     if [ "$ext" = - ]; then echo none
@@ -60,6 +69,9 @@ case "$1" in
     mirror)
         niri msg output "$int" on
         niri msg output "$ext" on
+        # both pinned: left on auto, niri would just set the laptop beside it again
+        niri msg output "$int" position set 0 0
+        niri msg output "$ext" position set 100000 0
         if ! mirroring; then
             setsid -f wl-mirror --fullscreen-output "$ext" "$int" >/dev/null 2>&1
             sleep 0.6
