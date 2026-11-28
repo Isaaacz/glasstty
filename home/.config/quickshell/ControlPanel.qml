@@ -27,6 +27,12 @@ Item {
     property int extra: 0                // which extra page 5 shows (index in extrasModel)
     readonly property bool opened: ShellState.panel === "control"
     property bool powerDrawer: false
+    // The right column: folded, a big photo and a notifications strip; open,
+    // the small profile row and the whole list (stays as you left it).
+    property bool notifsOpen: false
+    // 0 folded … 1 open, eased: everything in the column slides on it.
+    property real notifT: notifsOpen ? 1 : 0
+    Behavior on notifT { NumberAnimation { duration: 380; easing.type: Easing.InOutCubic } }
     // Which channel the right rail's vertical slider drives.
     property string rail: Brightness.bright >= 0 ? "bright" : "vol"
     onOpenedChanged: if (opened) {
@@ -79,6 +85,24 @@ Item {
             font.family: Appearance.font; font.pixelSize: 18
         }
         MouseArea { id: rbMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: rb.chosen() }
+    }
+
+    // ⏻ next to the profile: opens / closes the power drawer.
+    component PowerButton: Rectangle {
+        implicitWidth: 32
+        implicitHeight: 32
+        radius: 16
+        color: root.powerDrawer ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.85)
+             : (pbMa.containsMouse ? Colors.fill2 : Colors.fill3)
+        Behavior on color { ColorAnimation { duration: Appearance.mQuick } }
+        Text {
+            anchors.centerIn: parent
+            text: "󰐥"
+            color: root.powerDrawer ? Colors.accentInk : Colors.label
+            font.family: Appearance.font; font.pixelSize: 15
+        }
+        MouseArea { id: pbMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                    onClicked: { ShellState.closePanel(); Quickshell.execDetached(["qs", "ipc", "call", "exit", "open"]); } }
     }
 
     component QuickToggle: Rectangle {
@@ -184,6 +208,7 @@ Item {
 
                 // profile · power · notifications
         ColumnLayout {
+            id: rcol
             Layout.fillWidth: true
             Layout.fillHeight: true
             spacing: 8
@@ -192,10 +217,157 @@ Item {
             // The account picture GNOME/GDM use (AccountsService), your full
             // name from passwd and the distro. Read once; the picture is
             // re-read if you change it in GNOME's settings.
+            // Folded: the picture as big as the album cover, and under it the
+            // name, the user and the distro.
+            Item {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                // shrinks away as the list grows in (see the list's twin cap)
+                Layout.maximumHeight: rcol.height * (1 - root.notifT)
+                visible: root.notifT < 0.999
+                opacity: 1 - root.notifT
+                clip: true
+                id: bigBox
+
+                // uptime, kernel and the hour (for the greeting), re-read each
+                // time the Centre opens
+                property string uptime: ""
+                property string kernel: ""
+                property int hour: new Date().getHours()
+                Process {
+                    id: sysInfo
+                    running: root.opened
+                    command: ["sh", "-c", "cut -d. -f1 /proc/uptime; uname -r | cut -d- -f1"]
+                    stdout: StdioCollector {
+                        onStreamFinished: {
+                            const l = this.text.split("\n");
+                            const sec = parseInt(l[0]) || 0, h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60);
+                            bigBox.uptime = h > 0 ? h + " h " + m + " min" : m + " min";
+                            bigBox.kernel = (l[1] || "").trim();
+                            bigBox.hour = new Date().getHours();
+                        }
+                    }
+                }
+
+                ColumnLayout {
+                    id: bigProfile
+                    anchors.centerIn: parent
+                    width: parent.width
+                    spacing: 3
+                    scale: 1 - 0.12 * root.notifT
+                    Text {
+                        Layout.fillWidth: true
+                        Layout.bottomMargin: 8
+                        horizontalAlignment: Text.AlignHCenter
+                        text: I18n.tr(bigBox.hour < 5 ? "Buenas noches" : bigBox.hour < 12 ? "Buenos días"
+                            : bigBox.hour < 19 ? "Buenas tardes" : "Buenas noches")
+                        color: Colors.accentInk
+                        font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXS; font.weight: Font.Medium
+                        font.letterSpacing: 0.4
+                    }
+                    ClippingRectangle {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.preferredWidth: 124
+                        Layout.preferredHeight: 124
+                        Layout.bottomMargin: 12
+                        radius: 62
+                        color: Colors.fill3
+                        border.width: 2
+                        border.color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.55)
+                        Image {
+                            id: bigAvatar
+                            anchors.fill: parent
+                            source: "file://" + profile.avatar
+                            fillMode: Image.PreserveAspectCrop
+                            sourceSize.width: 256
+                            sourceSize.height: 256
+                            asynchronous: true
+                            cache: false
+                        }
+                        Text {
+                            anchors.centerIn: parent
+                            visible: bigAvatar.status !== Image.Ready
+                            text: (profile.fullName || profile.user).charAt(0).toUpperCase()
+                            color: Colors.accent
+                            font.family: Appearance.fontUI; font.pixelSize: 44; font.weight: Font.DemiBold
+                        }
+                    }
+                    Text {
+                        Layout.fillWidth: true
+                        horizontalAlignment: Text.AlignHCenter
+                        elide: Text.ElideRight
+                        text: profile.fullName || profile.user
+                        color: Colors.label
+                        font.family: Appearance.fontUI; font.pixelSize: Appearance.fsL; font.weight: Font.DemiBold
+                    }
+                    Text {
+                        Layout.fillWidth: true
+                        horizontalAlignment: Text.AlignHCenter
+                        elide: Text.ElideRight
+                        text: "@" + profile.user
+                        color: Colors.label2
+                        font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXS
+                    }
+                    Text {
+                        Layout.fillWidth: true
+                        visible: profile.distro !== ""
+                        horizontalAlignment: Text.AlignHCenter
+                        elide: Text.ElideRight
+                        text: profile.distro
+                        color: Colors.label3
+                        font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXS
+                    }
+                    // little facts about the machine
+                    Row {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.topMargin: 10
+                        spacing: 6
+                        Repeater {
+                            model: [
+                                { icon: "󰔟", text: bigBox.uptime },
+                                { icon: "󰌽", text: bigBox.kernel }
+                            ].filter(x => x.text !== "")
+                            Rectangle {
+                                required property var modelData
+                                implicitWidth: factRow.implicitWidth + 18
+                                implicitHeight: 24
+                                radius: 12
+                                color: Colors.fill3
+                                border.width: 1
+                                border.color: Colors.hairline
+                                Row {
+                                    id: factRow
+                                    anchors.centerIn: parent
+                                    spacing: 5
+                                    Text {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: modelData.icon
+                                        color: Colors.accentInk
+                                        font.family: Appearance.font; font.pixelSize: 12
+                                    }
+                                    Text {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: modelData.text
+                                        color: Colors.label2
+                                        font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXXS
+                                        font.features: ({ "tnum": 1 })
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                PowerButton { anchors { top: parent.top; right: parent.right } }
+            }
+
             RowLayout {
                 id: profile
+                visible: root.notifT > 0.001
+                opacity: root.notifT
                 Layout.fillWidth: true
-                Layout.bottomMargin: 4
+                Layout.preferredHeight: 40 * root.notifT
+                Layout.bottomMargin: 4 * root.notifT
+                clip: true
                 spacing: 10
                 property string fullName: ""
                 property string distro: ""
@@ -258,23 +430,7 @@ Item {
                         font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXXS
                     }
                 }
-                // Opens / closes the power drawer below.
-                Rectangle {
-                    Layout.preferredWidth: 32
-                    Layout.preferredHeight: 32
-                    radius: 16
-                    color: root.powerDrawer ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.85)
-                         : (pwrBtnMa.containsMouse ? Colors.fill2 : Colors.fill3)
-                    Behavior on color { ColorAnimation { duration: Appearance.mQuick } }
-                    Text {
-                        anchors.centerIn: parent
-                        text: "󰐥"
-                        color: root.powerDrawer ? Colors.accentInk : Colors.label
-                        font.family: Appearance.font; font.pixelSize: 15
-                    }
-                    MouseArea { id: pwrBtnMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                onClicked: { ShellState.closePanel(); Quickshell.execDetached(["qs", "ipc", "call", "exit", "open"]); } }
-                }
+                PowerButton {}
             }
 
             // ---- session / power (this fork) ----
@@ -359,56 +515,114 @@ Item {
                 }
             }
 
-            RowLayout {
+            // The notifications strip: folded it is a card at the foot of the
+            // column; a click anywhere off its buttons opens the list (and
+            // folds it again).
+            Item {
+                id: strip
                 Layout.fillWidth: true
-                spacing: 8
-                Text {
-                    text: I18n.tr("Notificaciones")
-                    color: Colors.label
-                    font.family: Appearance.fontUI; font.pixelSize: Appearance.fsS; font.weight: Font.DemiBold
-                }
+                // the newest notice, previewed while folded
+                readonly property var latest: NotificationCenter.notifHeads.length > 0 ? NotificationCenter.notifHeads[0] : null
+                readonly property real foldedH: strip.latest ? 62 : 46
+                implicitHeight: strip.foldedH + (hdr.implicitHeight - strip.foldedH) * root.notifT
                 Rectangle {
-                    visible: NotificationCenter.notifCount > 0
-                    implicitWidth: cnt.implicitWidth + 12
-                    implicitHeight: 17
-                    radius: 9
-                    color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.28)
-                    Text {
-                        id: cnt
-                        anchors.centerIn: parent
-                        text: NotificationCenter.notifCount
-                        color: Colors.accentInk
-                        font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXXS; font.weight: Font.Medium
-                        font.features: ({ "tnum": 1 })
+                    anchors.fill: parent
+                    radius: 14
+                    opacity: 1 - root.notifT
+                    color: hdrMa.containsMouse ? Colors.fill2 : Colors.fill3
+                    border.width: 1
+                    border.color: Colors.hairline
+                    Behavior on color { ColorAnimation { duration: Appearance.mQuick } }
+                }
+                MouseArea {
+                    id: hdrMa
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.notifsOpen = !root.notifsOpen
+                }
+
+                RowLayout {
+                    id: hdr
+                    anchors {
+                        left: parent.left; right: parent.right; top: parent.top
+                        topMargin: 9 * (1 - root.notifT)
+                        leftMargin: 12 * (1 - root.notifT); rightMargin: 9 * (1 - root.notifT)
                     }
-                }
-                Item { Layout.fillWidth: true }
-                // Do not disturb, like the reference's bell (Settings moved to the rail).
-                Rectangle {
-                    width: 28; height: 28; radius: 14
-                    color: NotificationCenter.dnd ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.35)
-                         : (bellMa.containsMouse ? Colors.fill2 : Colors.fill3)
+                    spacing: 8
                     Text {
-                        anchors.centerIn: parent
-                        text: NotificationCenter.dnd ? "󰂛" : "󰂚"
+                        text: I18n.tr("Notificaciones")
                         color: Colors.label
-                        font.family: Appearance.font; font.pixelSize: 14
+                        font.family: Appearance.fontUI; font.pixelSize: Appearance.fsS; font.weight: Font.DemiBold
                     }
-                    MouseArea { id: bellMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                onClicked: NotificationCenter.dnd = !NotificationCenter.dnd }
+                    Rectangle {
+                        visible: NotificationCenter.notifCount > 0
+                        implicitWidth: cnt.implicitWidth + 12
+                        implicitHeight: 17
+                        radius: 9
+                        color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.28)
+                        Text {
+                            id: cnt
+                            anchors.centerIn: parent
+                            text: NotificationCenter.notifCount
+                            color: Colors.accentInk
+                            font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXXS; font.weight: Font.Medium
+                            font.features: ({ "tnum": 1 })
+                        }
+                    }
+                    Text {
+                        text: "󰅀"
+                        rotation: 180 * root.notifT
+                        color: Colors.label3
+                        font.family: Appearance.font; font.pixelSize: 15
+                    }
+                    Item { Layout.fillWidth: true }
+                    // Do not disturb, like the reference's bell (Settings moved to the rail).
+                    Rectangle {
+                        width: 28; height: 28; radius: 14
+                        color: NotificationCenter.dnd ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.35)
+                             : (bellMa.containsMouse ? Colors.fill1 : Colors.fill2)
+                        Text {
+                            anchors.centerIn: parent
+                            text: NotificationCenter.dnd ? "󰂛" : "󰂚"
+                            color: Colors.label
+                            font.family: Appearance.font; font.pixelSize: 14
+                        }
+                        MouseArea { id: bellMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                    onClicked: NotificationCenter.dnd = !NotificationCenter.dnd }
+                    }
+                    Text {
+                        visible: root.notifT > 0.001 && NotificationCenter.notifCount > 0
+                        opacity: root.notifT
+                        text: I18n.tr("Limpiar")
+                        color: clearMa.containsMouse ? Colors.accentInk : Colors.label3
+                        font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXS
+                        Behavior on color { ColorAnimation { duration: Appearance.mQuick; easing.type: Easing.OutQuad } }
+                        MouseArea {
+                            id: clearMa
+                            anchors.fill: parent; anchors.margins: -5
+                            hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                            onClicked: NotificationCenter.clearNotifs()
+                        }
+                    }
                 }
+                // newest notice: its summary, one line, under the title
                 Text {
-                    visible: NotificationCenter.notifCount > 0
-                    text: I18n.tr("Limpiar")
-                    color: clearMa.containsMouse ? Colors.accentInk : Colors.label3
-                    font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXS
-                    Behavior on color { ColorAnimation { duration: Appearance.mQuick; easing.type: Easing.OutQuad } }
-                    MouseArea {
-                        id: clearMa
-                        anchors.fill: parent; anchors.margins: -5
-                        hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                        onClicked: NotificationCenter.clearNotifs()
-                    }
+                    anchors { left: parent.left; right: parent.right; bottom: parent.bottom; leftMargin: 12; rightMargin: 12; bottomMargin: 10 }
+                    visible: strip.latest !== null && root.notifT < 0.999
+                    opacity: 1 - root.notifT
+                    // one line whatever the notice carries: tags out, newlines
+                    // and runs of spaces folded, cut with an ellipsis
+                    wrapMode: Text.NoWrap
+                    maximumLineCount: 1
+                    textFormat: Text.PlainText
+                    elide: Text.ElideRight
+                    clip: true
+                    text: strip.latest ? (NotificationCenter.tn(strip.latest.summary || strip.latest.appName || "")
+                        + (strip.latest.body ? "  ·  " + NotificationCenter.tn(strip.latest.body).replace(/<[^>]*>/g, "") : ""))
+                        .replace(/\s+/g, " ").trim() : ""
+                    color: Colors.label3
+                    font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXXS
                 }
             }
 
@@ -440,6 +654,9 @@ Item {
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                Layout.maximumHeight: rcol.height * root.notifT
+                visible: root.notifT > 0.001
+                opacity: root.notifT
 
                 ListView {
                     id: notifList
@@ -680,7 +897,9 @@ Item {
             Text {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                visible: NotificationCenter.notifCount === 0
+                Layout.maximumHeight: rcol.height * root.notifT
+                visible: root.notifT > 0.001 && NotificationCenter.notifCount === 0
+                opacity: root.notifT
                 text: I18n.tr("Sin notificaciones")
                 color: Colors.label3
                 horizontalAlignment: Text.AlignHCenter
