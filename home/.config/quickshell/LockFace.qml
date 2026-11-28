@@ -176,7 +176,7 @@ Item {
         // What is playing, from Settings (off by default).
         Row {
             Layout.alignment: page.calign
-            readonly property var pl: ShellState.player
+            readonly property var pl: Media.player
             visible: page.cfg.lockShowMedia && pl !== null && (pl.trackTitle || "") !== ""
             topPadding: 14 * page.u
             spacing: 12 * page.u
@@ -386,17 +386,17 @@ Item {
         }
         // The battery, from Settings: the icon in the symbols font, the % in the theme's.
         Row {
-            visible: page.cfg.lockShowBattery && ShellState.batt >= 0
+            visible: page.cfg.lockShowBattery && SystemStats.batt >= 0
             spacing: 6 * page.u
             anchors.verticalCenter: parent.verticalCenter
             Text {
-                text: ShellState.battIcon
+                text: SystemStats.battIcon
                 color: page.soft
                 font { family: Appearance.font; pixelSize: 17 * page.u }
                 anchors.verticalCenter: parent.verticalCenter
             }
             Text {
-                text: ShellState.batt + "%"
+                text: SystemStats.batt + "%"
                 color: page.soft
                 font { family: page.family; pixelSize: 16 * page.u; weight: Font.DemiBold; letterSpacing: 2 * page.u; features: ({ "tnum": 1 }) }
                 anchors.verticalCenter: parent.verticalCenter

@@ -2,7 +2,7 @@
 //
 // Two halves: on top the year of contributions, one square per day, and below
 // the latest commits. scripts/github-stats.py brings the data through
-// ShellState.github; nothing here talks to the network or touches any token.
+// GitHub.github; nothing here talks to the network or touches any token.
 //
 // The squares are NOT green. They use the pywal accent, like the rest of the
 // desktop: a widget that brings its own palette looks stuck on top, not part
@@ -18,7 +18,7 @@ Item {
 
     // Careful with the name: `data` will NOT do, it is the list of children
     // every Item has built in, and QML treats it as read-only.
-    readonly property var gh: ShellState.github
+    readonly property var gh: GitHub.github
     readonly property var weeks: root.gh.weeks || []
     readonly property var counts: root.gh.counts || []
 
@@ -60,7 +60,7 @@ Item {
         return Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, a);
     }
 
-    // "hace 2 h" (2 h ago). Recomputed when ShellState.github changes, which
+    // "hace 2 h" (2 h ago). Recomputed when GitHub.github changes, which
     // is when new commits arrive; it does not hang off the shell's clock on
     // purpose, since that ticks every second and would repaint the whole list
     // with nothing new to say.
@@ -85,7 +85,7 @@ Item {
     // nothing.
     onActiveChanged: {
         if (root.active) {
-            ShellState.githubRefresh();
+            GitHub.githubRefresh();
             keys.forceActiveFocus();
         } else {
             root.hoverCol = -1;
@@ -107,7 +107,7 @@ Item {
         // A manual refresh, so you do not have to wait for the quarter hour.
         Keys.onPressed: function (e) {
             if (e.key === Qt.Key_R) {
-                ShellState.githubRefresh();
+                GitHub.githubRefresh();
                 e.accepted = true;
             }
         }
@@ -148,7 +148,7 @@ Item {
             // showing yesterday's numbers as if they were current.
             Text {
                 text: root.gh.stale ? I18n.tr("sin conexión")
-                    : ShellState.githubLoading ? I18n.tr("actualizando…")
+                    : GitHub.githubLoading ? I18n.tr("actualizando…")
                     : I18n.tr("{0} contribuciones este año", root.gh.total || 0)
                 color: root.gh.stale ? Colors.warn : Colors.label3
                 font.family: Appearance.fontUI
@@ -198,7 +198,7 @@ Item {
                              && index < root.weeks.length - 3
                     x: 16 + index * root.paso
                     y: 0
-                    text: mes.f ? ShellState.capitalize(
+                    text: mes.f ? Media.capitalize(
                               mes.f.toLocaleDateString(ShellState.loc, "MMM")) : ""
                     color: Colors.label3
                     font.family: Appearance.fontUI
@@ -380,7 +380,7 @@ Item {
             Layout.topMargin: 10
             Layout.alignment: Qt.AlignHCenter
             visible: (root.gh.commits || []).length === 0
-            text: ShellState.githubLoading ? I18n.tr("Cargando…")
+            text: GitHub.githubLoading ? I18n.tr("Cargando…")
                                            : I18n.tr("Ningún commit reciente")
             color: Colors.label3
             font.family: Appearance.fontUI

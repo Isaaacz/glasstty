@@ -133,7 +133,7 @@ Item {
 
             // Clicking the title while you are on another month goes back to today
             Text {
-                text: ShellState.capitalize(new Date(root.viewYear, root.viewMonth, 1, 12).toLocaleDateString(ShellState.loc, "MMMM yyyy"))
+                text: Media.capitalize(new Date(root.viewYear, root.viewMonth, 1, 12).toLocaleDateString(ShellState.loc, "MMMM yyyy"))
                 color: Colors.label
                 font.family: Appearance.fontUI
                 font.pixelSize: 15

@@ -64,7 +64,7 @@ Item {
                 Text {
                     height: 12
                     verticalAlignment: Text.AlignVCenter
-                    text: ShellState.capitalize(ShellState.now.toLocaleDateString(ShellState.loc, "dddd"))
+                    text: Media.capitalize(ShellState.now.toLocaleDateString(ShellState.loc, "dddd"))
                     color: Colors.label
                     font.family: Appearance.fontUI
                     font.pixelSize: Appearance.fsXXS
@@ -85,23 +85,23 @@ Item {
         Row {
             anchors { right: parent.right; rightMargin: 15; verticalCenter: parent.verticalCenter }
             spacing: 6
-            opacity: (Config.showBattery && !ShellState.mediaLive && ShellState.batt >= 0) ? 1 : 0
+            opacity: (Config.showBattery && !ShellState.mediaLive && SystemStats.batt >= 0) ? 1 : 0
             visible: opacity > 0.01
             Behavior on opacity { NumberAnimation { duration: Appearance.mIn; easing.type: Easing.OutCubic } }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: ShellState.battIcon
-                color: ShellState.ac ? Colors.ok
-                    : ShellState.batt < 15 ? Colors.crit
-                    : ShellState.batt < 30 ? Colors.warn : Colors.label
+                text: SystemStats.battIcon
+                color: SystemStats.ac ? Colors.ok
+                    : SystemStats.batt < 15 ? Colors.crit
+                    : SystemStats.batt < 30 ? Colors.warn : Colors.label
                 font.family: Appearance.font; font.pixelSize: Appearance.fsM
             }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: ShellState.batt + "%"
-                color: ShellState.ac ? Colors.ok
-                    : ShellState.batt < 15 ? Colors.crit
-                    : ShellState.batt < 30 ? Colors.warn : Colors.label
+                text: SystemStats.batt + "%"
+                color: SystemStats.ac ? Colors.ok
+                    : SystemStats.batt < 15 ? Colors.crit
+                    : SystemStats.batt < 30 ? Colors.warn : Colors.label
                 font.family: Appearance.fontUI
                 font.pixelSize: Appearance.fsXS
                 font.weight: Font.Medium
@@ -124,7 +124,7 @@ Item {
                 clip: true
                 Image {
                     anchors.fill: parent
-                    source: (ShellState.player && ShellState.player.trackArtUrl) ? ShellState.player.trackArtUrl : ""
+                    source: (Media.player && Media.player.trackArtUrl) ? Media.player.trackArtUrl : ""
                     fillMode: Image.PreserveAspectCrop
                     // Without sourceSize the cover art is decoded at its native
                     // resolution (600-1000 px) to paint 22-34 px; 64 is plenty.
@@ -133,8 +133,8 @@ Item {
                 }
                 Text {
                     anchors.centerIn: parent
-                    visible: !(ShellState.player && ShellState.player.trackArtUrl)
-                    text: Icons.play; color: ShellState.mediaAccent
+                    visible: !(Media.player && Media.player.trackArtUrl)
+                    text: Icons.play; color: Media.mediaAccent
                     font.family: Appearance.font; font.pixelSize: Appearance.fsXS
                     Behavior on color { ColorAnimation { duration: Appearance.mIn; easing.type: Easing.OutCubic } }
                 }
@@ -168,7 +168,7 @@ Item {
                         required property int index
                         x: index * 8
                         width: 4; radius: 2
-                        color: ShellState.mediaAccent
+                        color: Media.mediaAccent
                         Behavior on color { ColorAnimation { duration: Appearance.mIn; easing.type: Easing.OutCubic } }
 
                         // CONTINUOUS HEIGHT, WITH DECIMALS. There was once a
@@ -249,7 +249,7 @@ Item {
                 Text {
                     height: 14
                     verticalAlignment: Text.AlignVCenter
-                    text: ShellState.capitalize(ShellState.now.toLocaleDateString(ShellState.loc, "dddd"))
+                    text: Media.capitalize(ShellState.now.toLocaleDateString(ShellState.loc, "dddd"))
                     color: Colors.label
                     font.family: Appearance.fontUI
                     font.pixelSize: Appearance.fsXS
@@ -269,21 +269,21 @@ Item {
         Row {
             anchors { right: parent.right; rightMargin: 15; verticalCenter: parent.verticalCenter }
             spacing: 6
-            visible: ShellState.batt >= 0
+            visible: SystemStats.batt >= 0
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: ShellState.battIcon
-                color: ShellState.ac ? Colors.ok
-                    : ShellState.batt < 15 ? Colors.crit
-                    : ShellState.batt < 30 ? Colors.warn : Colors.label
+                text: SystemStats.battIcon
+                color: SystemStats.ac ? Colors.ok
+                    : SystemStats.batt < 15 ? Colors.crit
+                    : SystemStats.batt < 30 ? Colors.warn : Colors.label
                 font.family: Appearance.font; font.pixelSize: Appearance.fsL
             }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: ShellState.batt + "%"
-                color: ShellState.ac ? Colors.ok
-                    : ShellState.batt < 15 ? Colors.crit
-                    : ShellState.batt < 30 ? Colors.warn : Colors.label
+                text: SystemStats.batt + "%"
+                color: SystemStats.ac ? Colors.ok
+                    : SystemStats.batt < 15 ? Colors.crit
+                    : SystemStats.batt < 30 ? Colors.warn : Colors.label
                 font.family: Appearance.fontUI
                 font.pixelSize: Appearance.fsS
                 font.weight: Font.Medium
@@ -312,8 +312,8 @@ Item {
         // In the sliders (SettingsAudio.qml:123, ControlPanel.qml:50) the
         // `muted ? 0 : vol` stays, and rightly so: moving them calls
         // setVolume(), which unmutes. Here there is nothing to move.
-        readonly property int value: isVol ? ShellState.vol : Math.max(0, ShellState.bright)
-        readonly property bool callado: isVol && ShellState.muted
+        readonly property int value: isVol ? Audio.vol : Math.max(0, Brightness.bright)
+        readonly property bool callado: isVol && Audio.muted
         // same reason: the notch widens on entering OSD mode, so the track
         // grows; animating the width would make the bar lag behind
         property real shown: osd.value
@@ -325,9 +325,9 @@ Item {
 
             Text {
                 text: osd.isVol
-                    ? (ShellState.muted ? Icons.volMute
-                        : ShellState.vol > 55 ? Icons.volHigh
-                        : ShellState.vol > 20 ? Icons.volMed : Icons.volLow)
+                    ? (Audio.muted ? Icons.volMute
+                        : Audio.vol > 55 ? Icons.volHigh
+                        : Audio.vol > 20 ? Icons.volMed : Icons.volLow)
                     : Icons.brightness
                 color: Colors.label
                 font.family: Appearance.font; font.pixelSize: Appearance.fsL
@@ -405,9 +405,9 @@ Item {
         anchors.fill: parent
         active: root.mode === "charge"
 
-        readonly property color tone: ShellState.ac ? Colors.ok
-            : ShellState.batt < 15 ? Colors.crit
-            : ShellState.batt < 30 ? Colors.warn : Colors.label
+        readonly property color tone: SystemStats.ac ? Colors.ok
+            : SystemStats.batt < 15 ? Colors.crit
+            : SystemStats.batt < 30 ? Colors.warn : Colors.label
 
         Row {
             anchors.centerIn: parent
@@ -415,7 +415,7 @@ Item {
 
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: ShellState.battIcon
+                text: SystemStats.battIcon
                 color: chargeLayer.tone
                 font.family: Appearance.font
                 font.pixelSize: 21
@@ -424,7 +424,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 // "Con batería" (On battery) and not "Desenchufado" (Unplugged):
                 // what matters is not that a cable came out, but what you run on.
-                text: ShellState.ac ? I18n.tr("Cargando") : I18n.tr("Con batería")
+                text: SystemStats.ac ? I18n.tr("Cargando") : I18n.tr("Con batería")
                 color: Colors.label
                 font.family: Appearance.fontUI
                 font.pixelSize: Appearance.fsM
@@ -432,8 +432,8 @@ Item {
             }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                visible: ShellState.batt >= 0
-                text: I18n.tr("{0} %", ShellState.batt)
+                visible: SystemStats.batt >= 0
+                text: I18n.tr("{0} %", SystemStats.batt)
                 color: chargeLayer.tone
                 font.family: Appearance.fontUI
                 font.pixelSize: 15
@@ -608,7 +608,7 @@ Item {
                 clip: true
                 Image {
                     anchors.fill: parent
-                    source: (ShellState.player && ShellState.player.trackArtUrl) ? ShellState.player.trackArtUrl : ""
+                    source: (Media.player && Media.player.trackArtUrl) ? Media.player.trackArtUrl : ""
                     fillMode: Image.PreserveAspectCrop
                     // Without sourceSize the cover art is decoded at its native
                     // resolution (600-1000 px) to paint 22-34 px; 64 is plenty.
@@ -617,8 +617,8 @@ Item {
                 }
                 Text {
                     anchors.centerIn: parent
-                    visible: !(ShellState.player && ShellState.player.trackArtUrl)
-                    text: "󰎈"; color: ShellState.mediaAccent
+                    visible: !(Media.player && Media.player.trackArtUrl)
+                    text: "󰎈"; color: Media.mediaAccent
                     font.family: Appearance.font; font.pixelSize: Appearance.fsL
                     Behavior on color { ColorAnimation { duration: Appearance.mIn; easing.type: Easing.OutCubic } }
                 }
@@ -630,13 +630,13 @@ Item {
                 spacing: 1
                 Text {
                     Layout.fillWidth: true
-                    text: ShellState.player ? (ShellState.player.trackTitle || "") : ""
+                    text: Media.player ? (Media.player.trackTitle || "") : ""
                     color: Colors.label; elide: Text.ElideRight
                     font.family: Appearance.font; font.pixelSize: Appearance.fsXS; font.bold: true
                 }
                 Text {
                     Layout.fillWidth: true
-                    text: ShellState.player ? (ShellState.player.trackArtist || "") : ""
+                    text: Media.player ? (Media.player.trackArtist || "") : ""
                     color: Colors.label2; elide: Text.ElideRight
                     font.family: Appearance.font; font.pixelSize: Appearance.fsXXS
                 }
@@ -657,7 +657,7 @@ Item {
                         required property int index
                         x: index * 8
                         width: 4; radius: 2
-                        color: ShellState.mediaAccent
+                        color: Media.mediaAccent
                         Behavior on color { ColorAnimation { duration: Appearance.mIn; easing.type: Easing.OutCubic } }
                         antialiasing: true
                         height: Math.max(4, 22 * (AudioSpectrum.levels[index] || 0))
@@ -676,11 +676,11 @@ Item {
         anchors.fill: parent
         active: root.mode === "notif"
 
-        readonly property var n: ShellState.lastNotif
+        readonly property var n: NotificationCenter.lastNotif
         // drip-style cards from ~/.local/bin/notch: a coloured mark per kind
-        // and the actions as buttons (see ShellState.notifKind).
-        readonly property string kind: ShellState.notifKind(n)
-        readonly property var buttons: kind !== "" ? ShellState.notifButtons(n) : []
+        // and the actions as buttons (see NotificationCenter.notifKind).
+        readonly property string kind: NotificationCenter.notifKind(n)
+        readonly property var buttons: kind !== "" ? NotificationCenter.notifButtons(n) : []
         readonly property color kindColor: kind === "ok" ? "#4ade80" : kind === "warn" ? "#fbbf24"
             : kind === "fail" ? "#f87171" : Colors.accent
 
@@ -750,14 +750,14 @@ Item {
                 spacing: 1
                 Text {
                     Layout.fillWidth: true
-                    text: notifLayer.n ? ShellState.tn(notifLayer.n.summary) : ""
+                    text: notifLayer.n ? NotificationCenter.tn(notifLayer.n.summary) : ""
                     color: Colors.label; elide: Text.ElideRight
                     font.family: Appearance.fontUI; font.pixelSize: Appearance.fsS; font.weight: Font.DemiBold
                 }
                 Text {
                     Layout.fillWidth: true
                     visible: text.length > 0
-                    text: notifLayer.n ? ShellState.tn(notifLayer.n.body) : ""
+                    text: notifLayer.n ? NotificationCenter.tn(notifLayer.n.body) : ""
                     color: Colors.label2; elide: Text.ElideRight
                     textFormat: Text.StyledText
                     font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXXS

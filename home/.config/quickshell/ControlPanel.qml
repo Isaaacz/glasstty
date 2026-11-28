@@ -28,17 +28,20 @@ Item {
     readonly property bool opened: ShellState.panel === "control"
     property bool powerDrawer: false
     // Which channel the right rail's vertical slider drives.
-    property string rail: ShellState.bright >= 0 ? "bright" : "vol"
+    property string rail: Brightness.bright >= 0 ? "bright" : "vol"
     onOpenedChanged: if (opened) {
         root.page = ShellState.controlPage; ShellState.controlPage = 0;
         if (ShellState.controlExtra !== "") { root.openExtra(ShellState.controlExtra); ShellState.controlExtra = ""; }
         root.powerDrawer = false;
-        root.rail = ShellState.bright >= 0 ? "bright" : "vol";
+        root.rail = Brightness.bright >= 0 ? "bright" : "vol";
     }
 
     Connections {
-        target: ShellState
+        target: NotificationCenter
         function onControlGo(n) { root.page = Math.max(0, Math.min(4, n)); }
+    }
+    Connections {
+        target: ShellState
         function onControlExtraChanged() {
             if (root.opened && ShellState.controlExtra !== "") {
                 root.openExtra(ShellState.controlExtra);
@@ -152,7 +155,7 @@ Item {
                     radius: Appearance.radL
                     color: Colors.fill3
                     border.width: 1.5
-                    border.color: Qt.rgba(ShellState.mediaAccent.r, ShellState.mediaAccent.g, ShellState.mediaAccent.b, 0.55)
+                    border.color: Qt.rgba(Media.mediaAccent.r, Media.mediaAccent.g, Media.mediaAccent.b, 0.55)
                     MediaPanel { anchors.fill: parent }
                 }
 
@@ -166,11 +169,11 @@ Item {
                         Layout.fillWidth: true
                         Layout.bottomMargin: 8
                         spacing: 8
-                        QuickToggle { icon: ShellState.netIcon; tip: "Rede"; on: ShellState.online; onActivated: ShellState.togglePanel("network") }
-                        QuickToggle { icon: ShellState.btIcon; tip: "Bluetooth"; on: ShellState.btOn; onActivated: ShellState.togglePanel("bluetooth") }
-                        QuickToggle { icon: Icons.moon; tip: "Luz noturna"; on: ShellState.nightLight; onActivated: ShellState.toggleNightLight() }
-                        QuickToggle { icon: Icons.coffee; tip: "Cafeína"; on: ShellState.caffeine; onActivated: ShellState.caffeine = !ShellState.caffeine }
-                        QuickToggle { icon: Icons.gamepad; tip: "Modo jogo"; on: ShellState.gameMode; onActivated: ShellState.toggleGameMode() }
+                        QuickToggle { icon: NetworkState.netIcon; tip: "Rede"; on: NetworkState.online; onActivated: ShellState.togglePanel("network") }
+                        QuickToggle { icon: BluetoothState.btIcon; tip: "Bluetooth"; on: BluetoothState.btOn; onActivated: ShellState.togglePanel("bluetooth") }
+                        QuickToggle { icon: Icons.moon; tip: "Luz noturna"; on: NightLight.nightLight; onActivated: NightLight.toggleNightLight() }
+                        QuickToggle { icon: Icons.coffee; tip: "Cafeína"; on: Caffeine.caffeine; onActivated: Caffeine.caffeine = !Caffeine.caffeine }
+                        QuickToggle { icon: Icons.gamepad; tip: "Modo jogo"; on: GameMode.gameMode; onActivated: GameMode.toggleGameMode() }
                     }
 
                     MiniCalendar {
@@ -365,7 +368,7 @@ Item {
                     font.family: Appearance.fontUI; font.pixelSize: Appearance.fsS; font.weight: Font.DemiBold
                 }
                 Rectangle {
-                    visible: ShellState.notifCount > 0
+                    visible: NotificationCenter.notifCount > 0
                     implicitWidth: cnt.implicitWidth + 12
                     implicitHeight: 17
                     radius: 9
@@ -373,7 +376,7 @@ Item {
                     Text {
                         id: cnt
                         anchors.centerIn: parent
-                        text: ShellState.notifCount
+                        text: NotificationCenter.notifCount
                         color: Colors.accentInk
                         font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXXS; font.weight: Font.Medium
                         font.features: ({ "tnum": 1 })
@@ -383,19 +386,19 @@ Item {
                 // Do not disturb, like the reference's bell (Settings moved to the rail).
                 Rectangle {
                     width: 28; height: 28; radius: 14
-                    color: ShellState.dnd ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.35)
+                    color: NotificationCenter.dnd ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.35)
                          : (bellMa.containsMouse ? Colors.fill2 : Colors.fill3)
                     Text {
                         anchors.centerIn: parent
-                        text: ShellState.dnd ? "󰂛" : "󰂚"
+                        text: NotificationCenter.dnd ? "󰂛" : "󰂚"
                         color: Colors.label
                         font.family: Appearance.font; font.pixelSize: 14
                     }
                     MouseArea { id: bellMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                onClicked: ShellState.dnd = !ShellState.dnd }
+                                onClicked: NotificationCenter.dnd = !NotificationCenter.dnd }
                 }
                 Text {
-                    visible: ShellState.notifCount > 0
+                    visible: NotificationCenter.notifCount > 0
                     text: I18n.tr("Limpiar")
                     color: clearMa.containsMouse ? Colors.accentInk : Colors.label3
                     font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXS
@@ -404,7 +407,7 @@ Item {
                         id: clearMa
                         anchors.fill: parent; anchors.margins: -5
                         hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                        onClicked: ShellState.clearNotifs()
+                        onClicked: NotificationCenter.clearNotifs()
                     }
                 }
             }
@@ -424,7 +427,7 @@ Item {
             //     mouse away. It is the least of the three, but it is geometry that
             //     moves by itself right under the pointer.
             //   · and when you dismiss one, the model is a NEW array (see
-            //     ShellState.notifications): all the delegates are rebuilt with
+            //     NotificationCenter.notifications): all the delegates are rebuilt with
             //     hover at zero. Since the hand has not moved no event arrives to
             //     correct it, and the list is left lying: cross lit over a row that
             //     is off, and the second click in the same place closes nothing
@@ -451,8 +454,8 @@ Item {
                     // under a still pointer. Notifications are the same
                     // server objects while they live -> identity.
                     model: ScriptModel {
-                        // one row per group of identical notices (ShellState.notifHeads)
-                        values: ShellState.notifHeads
+                        // one row per group of identical notices (NotificationCenter.notifHeads)
+                        values: NotificationCenter.notifHeads
                         comparisonMode: ObjectComparison.Identity
                     }
                     boundsBehavior: Flickable.StopAtBounds
@@ -516,16 +519,16 @@ Item {
 
                         // what this row shows, worked out once
                         readonly property var n: nrow.modelData
-                        readonly property string kind: ShellState.notifKind(nrow.n)
-                        readonly property color kindColor: ShellState.notifKindColor(nrow.kind)
-                        readonly property string pic: ShellState.notifImage(nrow.n)
-                        readonly property int dupes: ShellState.notifDupes(nrow.n).length
+                        readonly property string kind: NotificationCenter.notifKind(nrow.n)
+                        readonly property color kindColor: NotificationCenter.notifKindColor(nrow.kind)
+                        readonly property string pic: NotificationCenter.notifImage(nrow.n)
+                        readonly property int dupes: NotificationCenter.notifDupes(nrow.n).length
                         readonly property bool crit: nrow.n.urgency === NotificationUrgency.Critical
                         // `notch` cards and the shell's own notices say nothing with
                         // their app name; real applications do.
                         readonly property string app: (nrow.kind !== "" || nrow.n.appName === "notch") ? ""
                             : (nrow.n.appName || "")
-                        readonly property string meta: [nrow.app, ShellState.notifAgo(nrow.n)]
+                        readonly property string meta: [nrow.app, NotificationCenter.notifAgo(nrow.n)]
                             .filter(x => x !== "").join(" · ")
 
                         RowLayout {
@@ -545,7 +548,7 @@ Item {
                                     color: Qt.rgba(nrow.kindColor.r, nrow.kindColor.g, nrow.kindColor.b, 0.20)
                                     Text {
                                         anchors.centerIn: parent
-                                        text: ShellState.notifMark(nrow.n)
+                                        text: NotificationCenter.notifMark(nrow.n)
                                         color: nrow.kind !== "" ? nrow.kindColor : Colors.accentInk
                                         font.family: Appearance.font; font.pixelSize: 16
                                     }
@@ -577,7 +580,7 @@ Item {
                                     spacing: 6
                                     Text {
                                         Layout.fillWidth: true
-                                        text: ShellState.tn(nrow.n.summary || nrow.n.appName || "")
+                                        text: NotificationCenter.tn(nrow.n.summary || nrow.n.appName || "")
                                         color: nrow.crit ? Colors.crit : Colors.label
                                         wrapMode: Text.Wrap
                                         maximumLineCount: 2
@@ -605,7 +608,7 @@ Item {
                                 Text {
                                     Layout.fillWidth: true
                                     visible: text.length > 0
-                                    text: ShellState.tn(nrow.n.body)
+                                    text: NotificationCenter.tn(nrow.n.body)
                                     color: Colors.label2
                                     wrapMode: Text.Wrap
                                     maximumLineCount: 2
@@ -662,12 +665,12 @@ Item {
                         // indexAt() on this same list and the order is the same,
                         // but the range is checked because one may have expired
                         // between the hover and the click.
-                        const ns = ShellState.notifHeads;
+                        const ns = NotificationCenter.notifHeads;
                         const n = (notifList.hoverIdx >= 0 && notifList.hoverIdx < ns.length)
                             ? ns[notifList.hoverIdx] : null;
                         if (!n) return;
                         // the cross closes the whole group of identical ones
-                        if (notifList.overClose) { ShellState.dismissGroup(n); return; }
+                        if (notifList.overClose) { NotificationCenter.dismissGroup(n); return; }
                         const acts = n.actions;
                         if (acts && acts.length > 0) { acts[0].invoke(); ShellState.closePanel(); }
                     }
@@ -677,7 +680,7 @@ Item {
             Text {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                visible: ShellState.notifCount === 0
+                visible: NotificationCenter.notifCount === 0
                 text: I18n.tr("Sin notificaciones")
                 color: Colors.label3
                 horizontalAlignment: Text.AlignHCenter
@@ -707,11 +710,11 @@ Item {
                     spacing: 12
                     Repeater {
                         model: [
-                            { label: "CPU", icon: "󰻠", v: ShellState.cpu, txt: ShellState.cpu + "%" },
-                            { label: "Memória", icon: "󰍛", v: ShellState.mem, txt: ShellState.mem + "%" },
-                            { label: "Disco", icon: "󰋊", v: ShellState.disk, txt: ShellState.disk + "%" },
-                            { label: "Bateria", icon: ShellState.battIcon, v: Math.max(0, ShellState.batt), txt: ShellState.batt >= 0 ? ShellState.batt + "%" : "—" },
-                            { label: "Temperatura", icon: "󰔏", v: ShellState.cpuTemp > 0 ? Math.min(100, ShellState.cpuTemp) : 0, txt: ShellState.cpuTemp > 0 ? Math.round(ShellState.cpuTemp) + "°C" : "—" }
+                            { label: "CPU", icon: "󰻠", v: SystemStats.cpu, txt: SystemStats.cpu + "%" },
+                            { label: "Memória", icon: "󰍛", v: SystemStats.mem, txt: SystemStats.mem + "%" },
+                            { label: "Disco", icon: "󰋊", v: SystemStats.disk, txt: SystemStats.disk + "%" },
+                            { label: "Bateria", icon: SystemStats.battIcon, v: Math.max(0, SystemStats.batt), txt: SystemStats.batt >= 0 ? SystemStats.batt + "%" : "—" },
+                            { label: "Temperatura", icon: "󰔏", v: SystemStats.cpuTemp > 0 ? Math.min(100, SystemStats.cpuTemp) : 0, txt: SystemStats.cpuTemp > 0 ? Math.round(SystemStats.cpuTemp) + "°C" : "—" }
                         ]
                         Rectangle {
                             id: gauge
@@ -763,7 +766,7 @@ Item {
                 // orange cloud did not, and on top of that it promised a colour that
                 // means nothing. Grey, like the labels of the switches that are off.
                 Text {
-                    text: ShellState.weatherIcon
+                    text: Weather.weatherIcon
                     color: Colors.label3
                     font.family: Appearance.font; font.pixelSize: 14
                 }
@@ -772,14 +775,14 @@ Item {
                 // had to read the whole line to get the number out. Now the number
                 // carries weight and the condition comes along.
                 Text {
-                    text: ShellState.weatherTemp
+                    text: Weather.weatherTemp
                     color: Colors.label
                     font.family: Appearance.fontUI; font.pixelSize: Appearance.fsS
                     font.features: ({ "tnum": 1 })
                 }
                 Text {
                     Layout.fillWidth: true
-                    text: ShellState.weatherCond
+                    text: Weather.weatherCond
                     color: Colors.label3; elide: Text.ElideRight
                     font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXS
                 }
@@ -829,7 +832,7 @@ Item {
                             }
                             Text {
                                 text: I18n.tr("CPU {0}%  ·  RAM {1}%  ·  SSD {2}%",
-                                              ShellState.cpu, ShellState.mem, ShellState.disk)
+                                              SystemStats.cpu, SystemStats.mem, SystemStats.disk)
                                 color: Colors.label3
                                 font.family: Appearance.fontUI; font.pixelSize: 8
                                 font.features: ({ "tnum": 1 })
@@ -872,7 +875,7 @@ Item {
                     // The last twelve columns of the big grid. If the data has not
                     // arrived yet, this is an empty array and nothing is painted:
                     // the card is still a valid door.
-                    readonly property var mini: (ShellState.github.weeks || []).slice(-12)
+                    readonly property var mini: (GitHub.github.weeks || []).slice(-12)
 
                     RowLayout {
                         anchors { fill: parent; leftMargin: 12; rightMargin: 10 }
@@ -888,11 +891,11 @@ Item {
                                 font.weight: Font.DemiBold
                             }
                             Text {
-                                text: ShellState.github.stale
+                                text: GitHub.github.stale
                                     ? I18n.tr("sin conexión")
                                     : I18n.tr("{0}  ·  racha {1}",
-                                              ShellState.github.total || 0,
-                                              ShellState.github.streak || 0)
+                                              GitHub.github.total || 0,
+                                              GitHub.github.streak || 0)
                                 color: Colors.label3
                                 font.family: Appearance.fontUI; font.pixelSize: 8
                                 font.features: ({ "tnum": 1 })
@@ -1475,28 +1478,28 @@ Item {
                 Layout.fillHeight: true
                 Layout.alignment: Qt.AlignHCenter
                 readonly property bool micOk: root.mic !== null && root.mic.audio !== null
-                icon: root.rail === "vol" ? (ShellState.muted ? Icons.volMute : Icons.volHigh)
+                icon: root.rail === "vol" ? (Audio.muted ? Icons.volMute : Icons.volHigh)
                     : root.rail === "mic" ? ((micOk && root.mic.audio.muted) ? "󰍭" : "󰍬")
                     : Icons.brightness
-                value: root.rail === "vol" ? ShellState.vol
+                value: root.rail === "vol" ? Audio.vol
                      : root.rail === "mic" ? (micOk ? Math.round(root.mic.audio.volume * 100) : 0)
-                     : Math.max(0, ShellState.bright)
+                     : Math.max(0, Brightness.bright)
                 onMoved: function (v) {
-                    if (root.rail === "vol") ShellState.setVolume(v);
+                    if (root.rail === "vol") Audio.setVolume(v);
                     else if (root.rail === "mic") { if (micOk) root.mic.audio.volume = v / 100; }
-                    else ShellState.setBrightness(v);
+                    else Brightness.setBrightness(v);
                 }
-                onIconClicked: if (ShellState.bright >= 0) root.rail = "bright"
+                onIconClicked: if (Brightness.bright >= 0) root.rail = "bright"
             }
             Knob {
                 Layout.alignment: Qt.AlignHCenter
                 implicitWidth: 44; implicitHeight: 44
-                icon: ShellState.muted ? Icons.volMute : Icons.volHigh
-                value: ShellState.vol
-                muted: ShellState.muted
+                icon: Audio.muted ? Icons.volMute : Icons.volHigh
+                value: Audio.vol
+                muted: Audio.muted
                 active: root.rail === "vol"
-                onMoved: function (v) { ShellState.setVolume(v); }
-                onClicked: if (root.rail === "vol") ShellState.toggleMute(); else root.rail = "vol"
+                onMoved: function (v) { Audio.setVolume(v); }
+                onClicked: if (root.rail === "vol") Audio.toggleMute(); else root.rail = "vol"
             }
             Knob {
                 Layout.alignment: Qt.AlignHCenter

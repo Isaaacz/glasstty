@@ -358,17 +358,17 @@ Singleton {
         case "settings": ShellState.closePanel(); ShellState.settingsOpen = true; return;
         case "keys":     ShellState.closePanel(); ShellState.openSettingsAt("keys"); return;
         case "dnd":
-            ShellState.dnd = !ShellState.dnd; ShellState.closePanel();
-            root.toast(Icons.bell, ShellState.dnd ? I18n.tr("No molestar activado")
+            NotificationCenter.dnd = !NotificationCenter.dnd; ShellState.closePanel();
+            root.toast(Icons.bell, NotificationCenter.dnd ? I18n.tr("No molestar activado")
                                             : I18n.tr("No molestar desactivado"));
             return;
         case "caffeine":
-            ShellState.caffeine = !ShellState.caffeine; ShellState.closePanel();
-            root.toast(Icons.coffee, ShellState.caffeine ? I18n.tr("Café: la pantalla no se apaga")
+            Caffeine.caffeine = !Caffeine.caffeine; ShellState.closePanel();
+            root.toast(Icons.coffee, Caffeine.caffeine ? I18n.tr("Café: la pantalla no se apaga")
                                                    : I18n.tr("Café desactivado"));
             return;
         case "gamemode":
-            ShellState.closePanel(); ShellState.toggleGameMode();
+            ShellState.closePanel(); GameMode.toggleGameMode();
             return;
         }
 
@@ -380,7 +380,7 @@ Singleton {
         case "lock":  Quickshell.execDetached(["loginctl", "lock-session"]); break;
         // Through the same door as the control centre tile and
         // Super+Shift+N: that way the poll finds out at once in all three cases.
-        case "night": ShellState.toggleNightLight(); break;
+        case "night": NightLight.toggleNightLight(); break;
         case "shot":  Quickshell.execDetached([S + "screenshot-annotate.sh"]); break;
         case "pick":  Quickshell.execDetached([S + "colorpicker.sh"]); break;
         case "ocr":   Quickshell.execDetached([S + "ocr.sh"]); break;

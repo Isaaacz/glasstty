@@ -53,8 +53,8 @@ Item {
     // No cheering phrase: if nothing is happening, the subtitle says how long
     // it has been on and how the battery is doing, which are facts. Only when
     // something happens do the subtitle (and the header icon) change colour.
-    readonly property bool battLow: ShellState.batt >= 0 && ShellState.batt < 18 && !ShellState.ac
-    readonly property bool hot: ShellState.cpuTemp >= 78
+    readonly property bool battLow: SystemStats.batt >= 0 && SystemStats.batt < 18 && !SystemStats.ac
+    readonly property bool hot: SystemStats.cpuTemp >= 78
     readonly property color headTone: root.battLow ? Colors.crit
         : root.hot ? Colors.warn : Colors.accent
 
@@ -123,7 +123,7 @@ Item {
     // not look like a mountain. The big figure calls out the exact degree; the
     // curve is there to show the SHAPE.
     readonly property var tempRange: {
-        const h = ShellState.tempHistory;
+        const h = SystemStats.tempHistory;
         if (!h || h.length === 0) return { lo: 35, hi: 55 };
         let lo = h[0], hi = h[0];
         for (let i = 1; i < h.length; i++) {
@@ -183,10 +183,10 @@ Item {
         return out;
     }
     readonly property color plotTone: root.readable(Colors.accent)
-    readonly property color tempTone: root.readable(ShellState.cpuTemp >= 80 ? Colors.crit
-        : ShellState.cpuTemp >= 68 ? Colors.warn : Colors.accent)
-    readonly property color diskTone: root.readable(ShellState.disk >= 92 ? Colors.crit
-        : ShellState.disk >= 82 ? Colors.warn : Colors.accent)
+    readonly property color tempTone: root.readable(SystemStats.cpuTemp >= 80 ? Colors.crit
+        : SystemStats.cpuTemp >= 68 ? Colors.warn : Colors.accent)
+    readonly property color diskTone: root.readable(SystemStats.disk >= 92 ? Colors.crit
+        : SystemStats.disk >= 82 ? Colors.warn : Colors.accent)
 
     MouseArea { anchors.fill: parent }   // the gap belongs to the panel
 
@@ -368,13 +368,13 @@ Item {
                     font.family: Appearance.fontUI; font.pixelSize: Appearance.fsM; font.weight: Font.DemiBold
                 }
                 Text {
-                    text: root.battLow ? I18n.tr("Batería baja · {0}", ShellState.battEstimateText)
-                        : root.hot ? I18n.tr("El procesador está caliente · {0} °C", Math.round(ShellState.cpuTemp))
-                        : ShellState.batt >= 0
+                    text: root.battLow ? I18n.tr("Batería baja · {0}", SystemStats.battEstimateText)
+                        : root.hot ? I18n.tr("El procesador está caliente · {0} °C", Math.round(SystemStats.cpuTemp))
+                        : SystemStats.batt >= 0
                             ? I18n.tr("Encendido desde hace {0}  ·  Batería {1} %{2}",
-                                      root.uptime(ShellState.uptimeSeconds), ShellState.batt,
-                                      ShellState.ac ? I18n.tr(", cargando") : "")
-                            : I18n.tr("Encendido desde hace {0}", root.uptime(ShellState.uptimeSeconds))
+                                      root.uptime(SystemStats.uptimeSeconds), SystemStats.batt,
+                                      SystemStats.ac ? I18n.tr(", cargando") : "")
+                            : I18n.tr("Encendido desde hace {0}", root.uptime(SystemStats.uptimeSeconds))
                     color: root.battLow ? Colors.crit : root.hot ? Colors.warn : Colors.label2
                     elide: Text.ElideRight
                     font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXS
@@ -449,12 +449,12 @@ Item {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         label: I18n.tr("Procesador")
-                        value: ShellState.cpu + " %"
+                        value: SystemStats.cpu + " %"
                         note: I18n.tr("carga {0} · {1} hilos",
-                                      root.decimal(ShellState.cpuLoad, 2), ShellState.cpuThreads)
+                                      root.decimal(SystemStats.cpuLoad, 2), SystemStats.cpuThreads)
                         aside: I18n.tr("últimos 90 s")
                         tone: root.plotTone
-                        series: ShellState.cpuHistory
+                        series: SystemStats.cpuHistory
                     }
                     // Memory does NOT split the height evenly with the
                     // processor. In ninety seconds RAM moves two or three
@@ -475,10 +475,10 @@ Item {
                         Layout.preferredHeight: 96
                         Layout.maximumHeight: 96
                         label: I18n.tr("Memoria")
-                        value: ShellState.mem + " %"
-                        note: ShellState.memTotalKib > 0
-                            ? I18n.tr("{0} de {1} GiB", root.gibFromKib(ShellState.memUsedKib),
-                                      root.gibFromKib(ShellState.memTotalKib))
+                        value: SystemStats.mem + " %"
+                        note: SystemStats.memTotalKib > 0
+                            ? I18n.tr("{0} de {1} GiB", root.gibFromKib(SystemStats.memUsedKib),
+                                      root.gibFromKib(SystemStats.memTotalKib))
                             : ""
                         // Same accent as the processor, not the wallpaper's
                         // ink: when the two series shared a card they had to be
@@ -487,7 +487,7 @@ Item {
                         // half the card come out a washed-out grey that belongs
                         // nowhere. One accent, as in the rest of the shell.
                         tone: root.plotTone
-                        series: ShellState.memHistory
+                        series: SystemStats.memHistory
                     }
                 }
             }
@@ -515,7 +515,7 @@ Item {
                     // Same reading on the fly as the bands on the left.
                     property int hover: -1
                     readonly property bool reading: tempCard.hover >= 0
-                        && tempCard.hover < ShellState.tempHistory.length
+                        && tempCard.hover < SystemStats.tempHistory.length
 
                     ColumnLayout {
                         anchors { fill: parent; leftMargin: 16; rightMargin: 16; topMargin: 13; bottomMargin: 13 }
@@ -538,8 +538,8 @@ Item {
                             }
                             Text {
                                 text: tempCard.reading
-                                    ? Math.round(ShellState.tempHistory[tempCard.hover]) + " °C"
-                                    : ShellState.cpuTemp >= 0 ? Math.round(ShellState.cpuTemp) + " °C" : "—"
+                                    ? Math.round(SystemStats.tempHistory[tempCard.hover]) + " °C"
+                                    : SystemStats.cpuTemp >= 0 ? Math.round(SystemStats.cpuTemp) + " °C" : "—"
                                 color: Colors.label
                                 font.family: Appearance.fontUI; font.pixelSize: 18
                                 font.weight: Font.DemiBold
@@ -556,11 +556,11 @@ Item {
                             Layout.fillWidth: true
                             Layout.leftMargin: 24
                             text: tempCard.reading
-                                ? root.agoText(ShellState.tempHistory.length - 1 - tempCard.hover)
-                                : ShellState.cpuTemp < 0 ? I18n.tr("Sin lectura")
-                                : ShellState.cpuTemp < 52 ? I18n.tr("Fresco")
-                                : ShellState.cpuTemp < 68 ? I18n.tr("Templado")
-                                : ShellState.cpuTemp < 80 ? I18n.tr("Caliente") : I18n.tr("Muy caliente")
+                                ? root.agoText(SystemStats.tempHistory.length - 1 - tempCard.hover)
+                                : SystemStats.cpuTemp < 0 ? I18n.tr("Sin lectura")
+                                : SystemStats.cpuTemp < 52 ? I18n.tr("Fresco")
+                                : SystemStats.cpuTemp < 68 ? I18n.tr("Templado")
+                                : SystemStats.cpuTemp < 80 ? I18n.tr("Caliente") : I18n.tr("Muy caliente")
                             color: Colors.label3
                             font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXXS
                             font.features: ({ "tnum": 1 })
@@ -574,7 +574,7 @@ Item {
 
                             HistoryGraph {
                                 anchors.fill: parent
-                                values: ShellState.tempHistory
+                                values: SystemStats.tempHistory
                                 floor: root.tempRange.lo
                                 ceiling: root.tempRange.hi
                                 lineColor: root.tempTone
@@ -591,7 +591,7 @@ Item {
                                 hoverEnabled: true
                                 acceptedButtons: Qt.NoButton
                                 onPositionChanged: function (m) {
-                                    tempCard.hover = root.sampleAt(m.x, width, ShellState.tempHistory);
+                                    tempCard.hover = root.sampleAt(m.x, width, SystemStats.tempHistory);
                                 }
                                 onExited: tempCard.hover = -1
                             }
@@ -617,8 +617,8 @@ Item {
                             spacing: 9
                             Text {
                                 text: "󰋊"
-                                color: ShellState.disk >= 92 ? Colors.crit
-                                    : ShellState.disk >= 82 ? Colors.warn : Colors.accent
+                                color: SystemStats.disk >= 92 ? Colors.crit
+                                    : SystemStats.disk >= 82 ? Colors.warn : Colors.accent
                                 font.family: Appearance.font; font.pixelSize: 15
                                 Behavior on color { ColorAnimation { duration: Appearance.mIn; easing.type: Easing.OutCubic } }
                             }
@@ -629,7 +629,7 @@ Item {
                                 font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXS
                             }
                             Text {
-                                text: ShellState.disk + " %"
+                                text: SystemStats.disk + " %"
                                 color: Colors.label
                                 font.family: Appearance.fontUI; font.pixelSize: 15
                                 font.weight: Font.DemiBold
@@ -652,7 +652,7 @@ Item {
                                 // width makes the disk look as if it were
                                 // filling up by itself. See the long
                                 // explanation in MediaPanel.
-                                property real p: Math.max(0, Math.min(1, ShellState.disk / 100))
+                                property real p: Math.max(0, Math.min(1, SystemStats.disk / 100))
                                 Behavior on p { NumberAnimation { duration: Appearance.mTick; easing.type: Easing.Linear } }
 
                                 height: parent.height
@@ -665,10 +665,10 @@ Item {
 
                         Text {
                             Layout.fillWidth: true
-                            text: ShellState.diskTotalBytes > 0
+                            text: SystemStats.diskTotalBytes > 0
                                 ? I18n.tr("{0} GiB libres de {1}",
-                                          root.gibFromBytes(Math.max(0, ShellState.diskTotalBytes - ShellState.diskUsedBytes)),
-                                          root.gibFromBytes(ShellState.diskTotalBytes))
+                                          root.gibFromBytes(Math.max(0, SystemStats.diskTotalBytes - SystemStats.diskUsedBytes)),
+                                          root.gibFromBytes(SystemStats.diskTotalBytes))
                                 : ""
                             color: Colors.label3; elide: Text.ElideRight
                             font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXXS

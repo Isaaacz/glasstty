@@ -48,7 +48,7 @@ Singleton {
     // for with a right-click on the updates, not the automatic check every five
     // minutes: that one happens by itself, and lighting up a new body on the
     // screen every five minutes is noise, not information.
-    readonly property bool busy: ShellState.updating
+    readonly property bool busy: Updates.updating
 
     // ── the timer ──
     property int timerTotal: 0        // seconds requested; 0 = no timer

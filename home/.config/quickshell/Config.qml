@@ -73,7 +73,7 @@ Singleton {
     property alias hoverPreview: opts.hoverPreview
     property alias hoverDelay: opts.hoverDelay  // ms before the "peek" opens
     // Does a browser video count as "music playing"? Off: the notch only
-    // changes face for real players. See ShellState.isBrowser.
+    // changes face for real players. See Media.isBrowser.
     property alias browserMedia: opts.browserMedia
     property alias showDate: opts.showDate
     property alias showBattery: opts.showBattery

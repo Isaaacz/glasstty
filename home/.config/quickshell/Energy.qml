@@ -36,7 +36,7 @@ Singleton {
         if (root.busy) { settle.restart(); return; }
         // Game mode forces Performance for as long as it is on; turning it
         // off lands back on the saved preference for the current power source.
-        const selected = ShellState.gameMode ? "performance"
+        const selected = GameMode.gameMode ? "performance"
             : root.onBattery ? Config.energyOnBattery : Config.energyOnAC;
         if (!root.valid(selected)) return;
         root.error = "";
@@ -78,7 +78,7 @@ Singleton {
         function onSaverBrightnessChanged() { desktopUpdate.restart(); }
     }
     Connections {
-        target: ShellState
+        target: GameMode
         function onGameModeChanged() { settle.restart(); }
     }
     // The D-Bus properties arrive asynchronously: the first probe can run

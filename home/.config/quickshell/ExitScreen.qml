@@ -62,7 +62,7 @@ Scope {
 
     // "Ligado há 3 h 12 min"
     function uptimeText() {
-        const s = ShellState.uptimeSeconds;
+        const s = SystemStats.uptimeSeconds;
         if (!(s > 0)) return "";
         const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
         const parts = d > 0 ? [d + " d", h + " h"] : h > 0 ? [h + " h", m + " min"] : [m + " min"];

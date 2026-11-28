@@ -47,7 +47,7 @@ Scope {
     property int layoutTick: 0
 
     Connections {
-        target: ShellState
+        target: NotificationCenter
         function onNotifPopped(n) { root.pop(n); }
     }
 
@@ -101,7 +101,7 @@ Scope {
     }
 
     function alive(n) {
-        const vs = ShellState.notifications;
+        const vs = NotificationCenter.notifications;
         return vs.indexOf(n) >= 0;
     }
 
@@ -223,14 +223,14 @@ Scope {
 
             function readN() {
                 if (!card.n) return;
-                card.title = ShellState.tn(card.n.summary || card.n.appName || "");
-                card.body = ShellState.tn(card.n.body || "");
+                card.title = NotificationCenter.tn(card.n.summary || card.n.appName || "");
+                card.body = NotificationCenter.tn(card.n.body || "");
                 card.appName = card.n.appName || "";
-                card.image = ShellState.notifImage(card.n);
-                card.kind = ShellState.notifKind(card.n);
-                card.buttons = ShellState.notifButtons(card.n).slice(0, 3);
+                card.image = NotificationCenter.notifImage(card.n);
+                card.kind = NotificationCenter.notifKind(card.n);
+                card.buttons = NotificationCenter.notifButtons(card.n).slice(0, 3);
                 card.critical = card.n.urgency === NotificationUrgency.Critical;
-                card.mark = ShellState.notifMark(card.n);
+                card.mark = NotificationCenter.notifMark(card.n);
             }
             function refresh() {
                 card.readN();
@@ -249,7 +249,7 @@ Scope {
                 goneTimer.start();
             }
 
-            readonly property color kindColor: Config.dropKindColors ? ShellState.notifKindColor(kind) : Colors.accent
+            readonly property color kindColor: Config.dropKindColors ? NotificationCenter.notifKindColor(kind) : Colors.accent
 
             readonly property color ink: root.ink
             readonly property bool showBody: Config.dropBody && body.length > 0
@@ -308,7 +308,7 @@ Scope {
                 id: countdown
                 target: card; property: "remain"
                 from: 1; to: 0
-                duration: card.n ? ShellState.notifFlashMs(card.n) : 4200
+                duration: card.n ? NotificationCenter.notifFlashMs(card.n) : 4200
                 paused: running && Config.dropHoverPause && ma.containsMouse && ma.moved
                 onFinished: if (!card.leaving && card.remain <= 0.001) card.leave()
             }

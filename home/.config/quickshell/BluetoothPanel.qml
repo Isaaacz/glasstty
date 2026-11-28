@@ -13,7 +13,7 @@ Item {
     id: root
 
     readonly property bool active: ShellState.panel === "bluetooth"
-    readonly property var adapter: ShellState.btAdapter
+    readonly property var adapter: BluetoothState.btAdapter
 
     onActiveChanged: if (root.active) keys.forceActiveFocus()
 
@@ -37,8 +37,8 @@ Item {
             spacing: 10
 
             Text {
-                text: ShellState.btIcon
-                color: ShellState.btConnected > 0 ? Colors.accentInk : (ShellState.btOn ? Colors.label : Colors.label3)
+                text: BluetoothState.btIcon
+                color: BluetoothState.btConnected > 0 ? Colors.accentInk : (BluetoothState.btOn ? Colors.label : Colors.label3)
                 font.family: Appearance.font; font.pixelSize: 18
             }
             ColumnLayout {
@@ -50,10 +50,10 @@ Item {
                 }
                 Text {
                     text: !root.adapter ? I18n.tr("Sin adaptador")
-                        : ShellState.btBlocked ? I18n.tr("Bloqueado por rfkill")
-                        : !ShellState.btOn ? I18n.tr("Apagado")
-                        : ShellState.btConnected > 0
-                            ? ShellState.btLabel(ShellState.btPaired[0])
+                        : BluetoothState.btBlocked ? I18n.tr("Bloqueado por rfkill")
+                        : !BluetoothState.btOn ? I18n.tr("Apagado")
+                        : BluetoothState.btConnected > 0
+                            ? BluetoothState.btLabel(BluetoothState.btPaired[0])
                             : I18n.tr("Sin conexión")
                     color: Colors.label2; elide: Text.ElideRight
                     font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXS
@@ -64,21 +64,21 @@ Item {
             Rectangle {
                 implicitWidth: 42; implicitHeight: 23
                 radius: 12
-                opacity: ShellState.btBlocked ? 0.4 : 1
-                color: ShellState.btOn ? Colors.accent : Colors.fill1
+                opacity: BluetoothState.btBlocked ? 0.4 : 1
+                color: BluetoothState.btOn ? Colors.accent : Colors.fill1
                 Behavior on color { ColorAnimation { duration: Appearance.mQuick; easing.type: Easing.OutQuad } }
                 Rectangle {
                     width: 17; height: 17; radius: 9
                     color: "#ffffff"
                     y: 3
-                    x: ShellState.btOn ? parent.width - width - 3 : 3
+                    x: BluetoothState.btOn ? parent.width - width - 3 : 3
                     Behavior on x { NumberAnimation { duration: Appearance.mQuick; easing.type: Easing.OutCubic } }
                 }
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
-                    enabled: !ShellState.btBlocked
-                    onClicked: ShellState.toggleBt()
+                    enabled: !BluetoothState.btBlocked
+                    onClicked: BluetoothState.toggleBt()
                 }
             }
         }
@@ -102,7 +102,7 @@ Item {
                 Text {
                     Layout.fillWidth: true
                     Layout.topMargin: 4
-                    visible: ShellState.btPaired.length > 0
+                    visible: BluetoothState.btPaired.length > 0
                     text: I18n.tr("Mis dispositivos")
                     color: Colors.accentInk
                     font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXXS
@@ -116,7 +116,7 @@ Item {
                 // so by identity.
                 Repeater {
                     model: ScriptModel {
-                        values: ShellState.btPaired
+                        values: BluetoothState.btPaired
                         comparisonMode: ObjectComparison.Identity
                     }
                     BtRow {}
@@ -125,7 +125,7 @@ Item {
                 Text {
                     Layout.fillWidth: true
                     Layout.topMargin: 10
-                    visible: ShellState.btOn && ShellState.btNearby.length > 0
+                    visible: BluetoothState.btOn && BluetoothState.btNearby.length > 0
                     text: I18n.tr("Disponibles")
                     color: Colors.accentInk
                     font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXXS
@@ -133,7 +133,7 @@ Item {
                 }
                 Repeater {
                     model: ScriptModel {
-                        values: ShellState.btOn ? ShellState.btNearby : []
+                        values: BluetoothState.btOn ? BluetoothState.btNearby : []
                         comparisonMode: ObjectComparison.Identity
                     }
                     BtRow {}
@@ -144,12 +144,12 @@ Item {
         Text {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            visible: !ShellState.btOn || (ShellState.btPaired.length === 0 && ShellState.btNearby.length === 0)
+            visible: !BluetoothState.btOn || (BluetoothState.btPaired.length === 0 && BluetoothState.btNearby.length === 0)
             text: !root.adapter ? I18n.tr("No hay adaptador bluetooth")
-                : ShellState.btBlocked
+                : BluetoothState.btBlocked
                     ? I18n.tr("El adaptador está bloqueado por rfkill.")
                         + "\n" + I18n.tr("Desbloquéalo con:  rfkill unblock bluetooth")
-                : !ShellState.btOn ? I18n.tr("Bluetooth apagado")
+                : !BluetoothState.btOn ? I18n.tr("Bluetooth apagado")
                 : I18n.tr("Buscando dispositivos…")
             color: Colors.label3
             horizontalAlignment: Text.AlignHCenter
@@ -186,7 +186,7 @@ Item {
                 spacing: 0
                 Text {
                     Layout.fillWidth: true
-                    text: ShellState.btLabel(dev.modelData)
+                    text: BluetoothState.btLabel(dev.modelData)
                     color: Colors.label; elide: Text.ElideRight
                     font.family: Appearance.fontUI; font.pixelSize: Appearance.fsS
                     font.weight: dev.modelData.connected ? Font.DemiBold : Font.Normal

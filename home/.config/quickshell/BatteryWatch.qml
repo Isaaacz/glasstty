@@ -1,6 +1,6 @@
 // BatteryWatch.qml — low-battery warnings.
 //
-// Reads ShellState.batt / ShellState.ac (already polled for the notch) and
+// Reads SystemStats.batt / SystemStats.ac (already polled for the notch) and
 // sends one notification per level as the battery drains: 20 %, 10 %, 5 %.
 // Plugging the charger in, or the charge climbing back above a level, re-arms
 // it. Power saver needs nothing here: Energy.qml already switches to the
@@ -26,12 +26,12 @@ Scope {
             : root.txt("{0}% restantes · conecte o carregador", "{0}% left · plug in the charger", "{0}% restante · conecta el cargador");
         Quickshell.execDetached(["notify-send", "-a", root.txt("Bateria", "Battery", "Batería"),
             "-u", critical ? "critical" : "normal", "-i", critical ? "battery-caution" : "battery-low",
-            title, body.replace("{0}", pct ?? ShellState.batt)]);
+            title, body.replace("{0}", pct ?? SystemStats.batt)]);
     }
     function check() {
-        const b = ShellState.batt;
+        const b = SystemStats.batt;
         if (b < 0) return;
-        if (ShellState.ac) { root.warned = 101; return; }
+        if (SystemStats.ac) { root.warned = 101; return; }
         // Climbing back above a level (a short charge) re-arms that level.
         while (root.warned <= 20 && b > root.warned) {
             const i = root.levels.indexOf(root.warned);
@@ -47,7 +47,7 @@ Scope {
     }
 
     Connections {
-        target: ShellState
+        target: SystemStats
         function onBattChanged() { root.check(); }
         function onAcChanged() { root.check(); }
     }
@@ -55,6 +55,6 @@ Scope {
         target: "battery"
         // For testing: qs ipc call battery test 10 (shows "10%", not the real charge)
         function test(level: int): void { root.warn(level, level); }
-        function status(): string { return "batt=" + ShellState.batt + " ac=" + ShellState.ac + " warned=" + root.warned; }
+        function status(): string { return "batt=" + SystemStats.batt + " ac=" + SystemStats.ac + " warned=" + root.warned; }
     }
 }

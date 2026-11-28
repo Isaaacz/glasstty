@@ -38,12 +38,12 @@ Flickable {
             title: I18n.tr("Pantalla")
 
             SettingsControls.Row_ {
-                shown: ShellState.bright >= 0
+                shown: Brightness.bright >= 0
                 label: I18n.tr("Brillo")
                 hint: I18n.tr("El mismo brillo que las teclas de función, y con el mismo OSD en el notch.")
                 SettingsControls.Slider_ {
-                    value: Math.max(ShellState.brightMin, ShellState.bright); from: ShellState.brightMin; to: 100; suffix: " %"
-                    onMoved: function (v) { ShellState.setBrightness(v); }
+                    value: Math.max(Brightness.brightMin, Brightness.bright); from: Brightness.brightMin; to: 100; suffix: " %"
+                    onMoved: function (v) { Brightness.setBrightness(v); }
                 }
             }
 
@@ -51,8 +51,8 @@ Flickable {
                 label: I18n.tr("Luz nocturna")
                 hint: I18n.tr("Baja la temperatura de color a 4000 K con hyprsunset. Súper+Shift+N hace lo mismo.")
                 SettingsControls.Switch_ {
-                    checked: ShellState.nightLight
-                    onToggled: ShellState.toggleNightLight()
+                    checked: NightLight.nightLight
+                    onToggled: NightLight.toggleNightLight()
                 }
             }
 
@@ -90,7 +90,7 @@ Flickable {
                 }
             }
             SettingsControls.Row_ {
-                shown: ShellState.bright >= 0 && Energy.available
+                shown: Brightness.bright >= 0 && Energy.available
                 label: I18n.tr("Reducir brillo en Ahorro")
                 hint: I18n.tr("Al entrar en Ahorro baja el brillo si supera el límite. Al salir recupera el anterior, salvo que lo hayas cambiado manualmente.")
                 SettingsControls.Switch_ {
@@ -99,7 +99,7 @@ Flickable {
                 }
             }
             SettingsControls.Row_ {
-                shown: ShellState.bright >= 0 && Energy.available && Config.dimOnSaver
+                shown: Brightness.bright >= 0 && Energy.available && Config.dimOnSaver
                 label: I18n.tr("Brillo en Ahorro")
                 hint: I18n.tr("Es un límite al entrar en el perfil, no un bloqueo: las teclas de brillo siguen funcionando. Si ya estaba más bajo, no lo sube.")
                 SettingsControls.Slider_ {
@@ -117,7 +117,7 @@ Flickable {
                 }
             }
             SettingsControls.Row_ {
-                shown: ShellState.batt >= 0
+                shown: SystemStats.batt >= 0
                 label: I18n.tr("Permitir reposo con batería")
                 hint: I18n.tr("Quita Cafeína al desenchufar: deja atenuar, bloquear, apagar la pantalla y suspender según tus tiempos de inactividad. Al enchufar restaura Cafeína. Puedes encenderla manualmente en el notch.")
                 SettingsControls.Switch_ {
@@ -140,51 +140,51 @@ Flickable {
             // presiding over them. The ENERGY card does not end up empty
             // because Caffeine and the rest are still there.
             SettingsControls.Row_ {
-                shown: ShellState.batt >= 0
+                shown: SystemStats.batt >= 0
                 label: I18n.tr("Batería")
                 hint: I18n.tr("Carga actual según el kernel, la misma que enseña el notch.")
                 SettingsControls.Val_ {
-                    text: I18n.tr("{0} % · {1}", ShellState.batt,
-                                  ShellState.ac ? I18n.tr("con cargador") : I18n.tr("con batería"))
-                    color: ShellState.batt < 15 && !ShellState.ac ? Colors.crit : Colors.label2
+                    text: I18n.tr("{0} % · {1}", SystemStats.batt,
+                                  SystemStats.ac ? I18n.tr("con cargador") : I18n.tr("con batería"))
+                    color: SystemStats.batt < 15 && !SystemStats.ac ? Colors.crit : Colors.label2
                 }
             }
 
             SettingsControls.Row_ {
-                shown: ShellState.battHealth >= 0 || ShellState.battCycles >= 0
+                shown: SystemStats.battHealth >= 0 || SystemStats.battCycles >= 0
                 label: I18n.tr("Salud")
                 hint: I18n.tr("Capacidad máxima actual frente a la capacidad de fábrica, según UPower. Los ciclos vienen directamente del contador de la batería.")
                 SettingsControls.Val_ {
                     text: {
-                        const salud = ShellState.battHealth >= 0
-                                    ? ShellState.battHealth.toFixed(0) + " %" : I18n.tr("sin dato");
-                        return ShellState.battCycles >= 0
-                             ? I18n.tr("{0} · {1} ciclos", salud, ShellState.battCycles) : salud;
+                        const salud = SystemStats.battHealth >= 0
+                                    ? SystemStats.battHealth.toFixed(0) + " %" : I18n.tr("sin dato");
+                        return SystemStats.battCycles >= 0
+                             ? I18n.tr("{0} · {1} ciclos", salud, SystemStats.battCycles) : salud;
                     }
-                    color: ShellState.battHealth >= 0 && ShellState.battHealth < 60 ? Colors.crit
-                        : ShellState.battHealth >= 0 && ShellState.battHealth < 80 ? Colors.warn : Colors.label2
+                    color: SystemStats.battHealth >= 0 && SystemStats.battHealth < 60 ? Colors.crit
+                        : SystemStats.battHealth >= 0 && SystemStats.battHealth < 80 ? Colors.warn : Colors.label2
                 }
             }
 
             SettingsControls.Row_ {
-                shown: ShellState.battFullWh > 0
+                shown: SystemStats.battFullWh > 0
                 label: I18n.tr("Capacidad")
                 hint: I18n.tr("Energía que admite cargada al máximo frente al diseño original. Se muestra en vatios-hora, no es el porcentaje de carga de ahora.")
                 SettingsControls.Val_ {
-                    text: ShellState.battDesignWh > 0
-                        ? I18n.tr("{0} de {1}", ShellState.fmtWh(ShellState.battFullWh),
-                                  ShellState.fmtWh(ShellState.battDesignWh))
-                        : ShellState.fmtWh(ShellState.battFullWh)
+                    text: SystemStats.battDesignWh > 0
+                        ? I18n.tr("{0} de {1}", SystemStats.fmtWh(SystemStats.battFullWh),
+                                  SystemStats.fmtWh(SystemStats.battDesignWh))
+                        : SystemStats.fmtWh(SystemStats.battFullWh)
                 }
             }
 
             SettingsControls.Row_ {
-                shown: ShellState.batt >= 0
+                shown: SystemStats.batt >= 0
                 label: I18n.tr("Autonomía")
                 hint: I18n.tr("Estimación de UPower según el consumo reciente. Puede tardar unos minutos en estabilizarse después de enchufar, desenchufar o despertar el equipo.")
                 SettingsControls.Val_ {
-                    text: ShellState.battEstimateText
-                        + (ShellState.battRateW > 0.05 ? " · " + ShellState.battRateW.toFixed(1) + " W" : "")
+                    text: SystemStats.battEstimateText
+                        + (SystemStats.battRateW > 0.05 ? " · " + SystemStats.battRateW.toFixed(1) + " W" : "")
                 }
             }
 
@@ -192,8 +192,8 @@ Flickable {
                 label: I18n.tr("Cafeína")
                 hint: I18n.tr("Impide apagar la pantalla y suspender por inactividad. El ajuste Permitir reposo con batería la desactiva al desenchufar; puedes volver a activarla manualmente.")
                 SettingsControls.Switch_ {
-                    checked: ShellState.caffeine
-                    onToggled: function (v) { ShellState.caffeine = v; }
+                    checked: Caffeine.caffeine
+                    onToggled: function (v) { Caffeine.caffeine = v; }
                 }
             }
 
@@ -205,12 +205,12 @@ Flickable {
             title: I18n.tr("Red")
 
             SettingsControls.Row_ {
-                shown: ShellState.hasWifi
+                shown: NetworkState.hasWifi
                 label: I18n.tr("Wi-Fi")
                 hint: I18n.tr("Enciende o apaga la radio wifi (NetworkManager).")
                 SettingsControls.Switch_ {
-                    checked: ShellState.wifiOn
-                    onToggled: function (v) { ShellState.setWifi(v); }
+                    checked: NetworkState.wifiOn
+                    onToggled: function (v) { NetworkState.setWifi(v); }
                 }
             }
 
@@ -218,9 +218,9 @@ Flickable {
                 label: I18n.tr("Redes disponibles")
                 hint: I18n.tr("Abre el selector de redes en el notch. Ajustes se cierra para no taparlo.")
                 icon: Icons.wifi
-                value: ShellState.wiredDev ? I18n.tr("cable")
-                     : ShellState.wifiNet ? ShellState.wifiNet.name
-                     : (ShellState.wifiOn || !ShellState.hasWifi) ? I18n.tr("sin conexión") : I18n.tr("apagado")
+                value: NetworkState.wiredDev ? I18n.tr("cable")
+                     : NetworkState.wifiNet ? NetworkState.wifiNet.name
+                     : (NetworkState.wifiOn || !NetworkState.hasWifi) ? I18n.tr("sin conexión") : I18n.tr("apagado")
                 onTriggered: {
                     ShellState.settingsOpen = false;
                     ShellState.togglePanel("network");
@@ -232,7 +232,7 @@ Flickable {
                 hint: I18n.tr("Gestiona perfiles WPA-Enterprise sin enseñar contraseñas en comandos: identidad, método EAP y certificados se guardan mediante NetworkManager.")
                 icon: Icons.wifiLock
                 value: I18n.tr("EAP y certificados")
-                onTriggered: ShellState.openNetworkProfiles()
+                onTriggered: NetworkState.openNetworkProfiles()
             }
         }
 
@@ -245,8 +245,8 @@ Flickable {
                 label: I18n.tr("No molestar")
                 hint: I18n.tr("Las notificaciones siguen llegando y quedan en el centro de control, pero el notch no las anuncia.")
                 SettingsControls.Switch_ {
-                    checked: ShellState.dnd
-                    onToggled: function (v) { ShellState.dnd = v; }
+                    checked: NotificationCenter.dnd
+                    onToggled: function (v) { NotificationCenter.dnd = v; }
                 }
             }
 
@@ -254,9 +254,9 @@ Flickable {
                 label: I18n.tr("Vaciar la bandeja")
                 hint: I18n.tr("Descarta todas las notificaciones guardadas.")
                 icon: Icons.bell
-                value: ShellState.notifCount === 0 ? I18n.tr("vacía")
-                     : I18n.tr("{0} sin leer", ShellState.notifCount)
-                onTriggered: ShellState.clearNotifs()
+                value: NotificationCenter.notifCount === 0 ? I18n.tr("vacía")
+                     : I18n.tr("{0} sin leer", NotificationCenter.notifCount)
+                onTriggered: NotificationCenter.clearNotifs()
             }
         }
 

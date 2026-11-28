@@ -25,13 +25,13 @@ Flickable {
     ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded; width: 5 }
     onVisibleChanged: {
         if (visible) contentY = 0;
-        // discovery is governed by a single Binding in ShellState
-        ShellState.btScanWanted = visible;
+        // discovery is governed by a single Binding in NetworkState
+        NetworkState.btScanWanted = visible;
     }
-    Component.onDestruction: ShellState.btScanWanted = false
+    Component.onDestruction: NetworkState.btScanWanted = false
 
     readonly property var adapter: Bluetooth.defaultAdapter
-    readonly property bool blocked: ShellState.btBlocked
+    readonly property bool blocked: BluetoothState.btBlocked
     readonly property bool on_: root.adapter ? root.adapter.enabled : false
 
     ColumnLayout {
@@ -96,7 +96,7 @@ Flickable {
                 // It did not show before because the array was a reset and the
                 // last signal was always onItemAdded.
                 model: ScriptModel {
-                    values: ShellState.btPaired
+                    values: BluetoothState.btPaired
                     comparisonMode: ObjectComparison.Identity
                 }
                 onItemAdded: cPaired.recount()
@@ -111,7 +111,7 @@ Flickable {
 
             Repeater {
                 model: ScriptModel {
-                    values: root.on_ ? ShellState.btNearby : []
+                    values: root.on_ ? BluetoothState.btNearby : []
                     comparisonMode: ObjectComparison.Identity
                 }
                 onItemAdded: cNearby.recount()
@@ -123,7 +123,7 @@ Flickable {
         SettingsControls.Empty_ {
             Layout.topMargin: 4
             visible: ShellState.settingsQuery.length === 0
-                && root.on_ && ShellState.btNearby.length === 0
+                && root.on_ && BluetoothState.btNearby.length === 0
             icon: "󰂯"
             title: I18n.tr("Buscando dispositivos")
             body: I18n.tr("Pon el equipo cerca y activa su modo de emparejamiento. Aparecerá aquí en cuanto Bluez lo encuentre.")
@@ -132,7 +132,7 @@ Flickable {
         SettingsControls.Empty_ {
             Layout.topMargin: 4
             visible: ShellState.settingsQuery.length === 0 && !root.on_ && !root.blocked
-                && root.adapter !== null && ShellState.btPaired.length === 0
+                && root.adapter !== null && BluetoothState.btPaired.length === 0
             icon: "󰂲"
             title: I18n.tr("Bluetooth está apagado")
             body: I18n.tr("Enciéndelo arriba para buscar y emparejar dispositivos cercanos.")
@@ -144,7 +144,7 @@ Flickable {
         id: dev
         required property var modelData
 
-        readonly property string name_: ShellState.btLabel(dev.modelData)
+        readonly property string name_: BluetoothState.btLabel(dev.modelData)
         readonly property string state_: dev.modelData.pairing ? I18n.tr("Emparejando…")
             : dev.modelData.connected
                 ? (dev.modelData.batteryAvailable

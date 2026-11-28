@@ -120,17 +120,17 @@ Flickable {
                 label: I18n.tr("Volumen")
                 hint: I18n.tr("El del dispositivo predeterminado. Es el mismo que mueven las teclas de volumen.")
                 SettingsControls.Slider_ {
-                    value: ShellState.muted ? 0 : ShellState.vol
+                    value: Audio.muted ? 0 : Audio.vol
                     from: 0; to: 100; suffix: " %"
-                    onMoved: function (v) { ShellState.setVolume(v); }
+                    onMoved: function (v) { Audio.setVolume(v); }
                 }
             }
             SettingsControls.Row_ {
                 label: I18n.tr("Silenciar")
                 hint: I18n.tr("Silencia la salida sin perder el nivel al que la tenías.")
                 SettingsControls.Switch_ {
-                    checked: ShellState.muted
-                    onToggled: ShellState.toggleMute()
+                    checked: Audio.muted
+                    onToggled: Audio.toggleMute()
                 }
             }
         }

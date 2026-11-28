@@ -12,8 +12,8 @@ import QtQuick.Effects
 Scope {
     id: root
     property bool open: false
-    readonly property var player: ShellState.player
-    readonly property color accent: ShellState.mediaAccent
+    readonly property var player: Media.player
+    readonly property color accent: Media.mediaAccent
 
     property real pos: 0
     property real len: (player && player.lengthSupported) ? player.length : 0

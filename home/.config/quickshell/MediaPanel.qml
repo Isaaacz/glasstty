@@ -10,7 +10,7 @@ import QtQuick.Layouts
 
 Item {
     id: root
-    readonly property color accent: ShellState.mediaAccent
+    readonly property color accent: Media.mediaAccent
     // This fork: scale for narrower cards (the Control Centre is more compact).
     readonly property real k: Math.max(0.6, Math.min(1, width / 260))
 
@@ -41,8 +41,8 @@ Item {
                 anchors.centerIn: parent
                 width: Math.round(166 * root.k); height: width; radius: width / 2
                 color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.10)
-                scale: ShellState.player && ShellState.player.isPlaying ? 1 : 0.94
-                opacity: ShellState.player && ShellState.player.isPlaying ? 1 : 0.45
+                scale: Media.player && Media.player.isPlaying ? 1 : 0.94
+                opacity: Media.player && Media.player.isPlaying ? 1 : 0.45
                 Behavior on scale { SpringAnimation { spring: Appearance.sprPanel; damping: Appearance.dmpPanel; epsilon: Appearance.eppScale } }
                 Behavior on opacity { NumberAnimation { duration: Appearance.mIn; easing.type: Easing.OutCubic } }
                 Behavior on color { ColorAnimation { duration: Appearance.mIn; easing.type: Easing.OutCubic } }
@@ -61,8 +61,8 @@ Item {
                 width: Math.round(172 * root.k); height: width
                 z: 2
                 color: root.accent
-                progress: ShellState.len > 0 ? ShellState.pos / ShellState.len : 0
-                live: ShellState.player !== null && ShellState.player.isPlaying
+                progress: Media.len > 0 ? Media.pos / Media.len : 0
+                live: Media.player !== null && Media.player.isPlaying
             }
 
             Image {
@@ -73,9 +73,9 @@ Item {
                 // may no longer exist (many players leave it in /tmp), and then the
                 // Image never reaches Ready and the usual musical note appears: the
                 // fallback was already written.
-                source: (ShellState.player && ShellState.player.trackArtUrl)
-                    ? ShellState.player.trackArtUrl
-                    : ShellState.hayUltimo ? ShellState.ultimoArte : ""
+                source: (Media.player && Media.player.trackArtUrl)
+                    ? Media.player.trackArtUrl
+                    : Media.hayUltimo ? Media.ultimoArte : ""
                 sourceSize.width: 292
                 sourceSize.height: 292
                 fillMode: Image.PreserveAspectCrop
@@ -103,7 +103,7 @@ Item {
                 visible: coverImage.status === Image.Ready
                 // Dimmed when it is a memory and not what is playing: the same
                 // distinction the halo and the circle's border already make.
-                opacity: ShellState.hayUltimo ? 0.45 : 1
+                opacity: Media.hayUltimo ? 0.45 : 1
                 Behavior on opacity { NumberAnimation { duration: Appearance.mIn; easing.type: Easing.OutCubic } }
                 antialiasing: true
                 maskEnabled: true
@@ -134,7 +134,7 @@ Item {
             // stopped player, and the button below would look like a broken play.
             Text {
                 Layout.fillWidth: true
-                visible: ShellState.hayUltimo
+                visible: Media.hayUltimo
                 text: I18n.tr("Lo último que sonó")
                 color: Colors.label3
                 horizontalAlignment: Text.AlignHCenter
@@ -144,9 +144,9 @@ Item {
 
             Text {
                 Layout.fillWidth: true
-                text: ShellState.player
-                    ? (ShellState.player.trackTitle || I18n.tr("Sin reproducción"))
-                    : ShellState.hayUltimo ? ShellState.ultimoTitulo
+                text: Media.player
+                    ? (Media.player.trackTitle || I18n.tr("Sin reproducción"))
+                    : Media.hayUltimo ? Media.ultimoTitulo
                     : I18n.tr("Sin reproducción")
                 color: Colors.label
                 horizontalAlignment: Text.AlignHCenter
@@ -161,8 +161,8 @@ Item {
             }
             Text {
                 Layout.fillWidth: true
-                text: ShellState.player ? (ShellState.player.trackArtist || "")
-                    : ShellState.hayUltimo ? ShellState.ultimoArtista : ""
+                text: Media.player ? (Media.player.trackArtist || "")
+                    : Media.hayUltimo ? Media.ultimoArtista : ""
                 color: Colors.label2
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideRight
@@ -189,8 +189,8 @@ Item {
                     // notch opens: animating the width mixes that widening with the
                     // song's progress and the bar reaches its place half a second
                     // late, as if playback were running at another pace.
-                    property real p: ShellState.len > 0
-                        ? Math.max(0, Math.min(1, ShellState.pos / ShellState.len)) : 0
+                    property real p: Media.len > 0
+                        ? Math.max(0, Math.min(1, Media.pos / Media.len)) : 0
                     Behavior on p { NumberAnimation { duration: Appearance.mTick } }
 
                     height: parent.height
@@ -209,7 +209,7 @@ Item {
                     anchors.margins: -agarre
                     cursorShape: Qt.PointingHandCursor
                     onClicked: function (m) {
-                        if (!ShellState.player || ShellState.len <= 0)
+                        if (!Media.player || Media.len <= 0)
                             return;
                         // MIND THE ORIGIN: HERE THEY ARE NOT THE SAME PLACE.
                         //
@@ -224,14 +224,14 @@ Item {
                         // MediaControls.qml:145-150 already got right by having no
                         // margins.
                         const f = Math.max(0, Math.min(1, (m.x - agarre) / seek.width));
-                        ShellState.player.position = f * ShellState.len;
+                        Media.player.position = f * Media.len;
                     }
                 }
             }
 
             Text {
                 anchors { left: parent.left; bottom: parent.bottom }
-                text: ShellState.fmt(ShellState.pos)
+                text: Media.fmt(Media.pos)
                 color: Colors.label3
                 font.family: Appearance.fontUI
                 font.pixelSize: Appearance.fsXXS
@@ -239,7 +239,7 @@ Item {
             }
             Text {
                 anchors { right: parent.right; bottom: parent.bottom }
-                text: ShellState.fmt(ShellState.len)
+                text: Media.fmt(Media.len)
                 color: Colors.label3
                 font.family: Appearance.fontUI
                 font.pixelSize: Appearance.fsXXS
@@ -267,8 +267,8 @@ Item {
                     // read better than one on its own, off centre. The middle one
                     // does do something -- it reopens the app that was playing --
                     // as long as we know which one it was.
-                    readonly property bool util: ShellState.player !== null
-                        || (transport.index === 1 && ShellState.ultimaApp !== null)
+                    readonly property bool util: Media.player !== null
+                        || (transport.index === 1 && Media.ultimaApp !== null)
                     opacity: transport.util ? 1 : 0.3
                     Behavior on opacity { NumberAnimation { duration: Appearance.mIn } }
 
@@ -288,7 +288,7 @@ Item {
                         anchors.centerIn: parent
                         text: transport.index === 0 ? Icons.prev
                             : transport.index === 1
-                                ? (ShellState.player && ShellState.player.isPlaying ? Icons.pause : Icons.play)
+                                ? (Media.player && Media.player.isPlaying ? Icons.pause : Icons.play)
                                 : Icons.next
                         color: transportMa.containsMouse ? root.accent : Colors.label
                         font.family: Appearance.font
@@ -307,15 +307,15 @@ Item {
                             // does not exist if the program is closed -- but it
                             // is what you want when you press it: back to the
                             // music.
-                            if (!ShellState.player) {
-                                if (transport.index === 1 && ShellState.ultimaApp)
-                                    Launcher.launchApp(ShellState.ultimaApp);
+                            if (!Media.player) {
+                                if (transport.index === 1 && Media.ultimaApp)
+                                    Launcher.launchApp(Media.ultimaApp);
                                 return;
                             }
-                            if (transport.index === 0) ShellState.player.previous();
+                            if (transport.index === 0) Media.player.previous();
                             else if (transport.index === 1)
-                                ShellState.player.isPlaying ? ShellState.player.pause() : ShellState.player.play();
-                            else ShellState.player.next();
+                                Media.player.isPlaying ? Media.player.pause() : Media.player.play();
+                            else Media.player.next();
                         }
                     }
                 }

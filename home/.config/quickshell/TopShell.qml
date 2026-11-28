@@ -43,7 +43,7 @@ Scope {
     // Game mode drops it too: games run maximised under the bar (so the fps
     // stay visible), and real blur behind the bar is redone on every game
     // frame, which on an iGPU shows up as stutter. The band goes solid.
-    readonly property bool glassAllowed: Compositor.isNiri && Config.barBlur && !ShellState.gameMode
+    readonly property bool glassAllowed: Compositor.isNiri && Config.barBlur && !GameMode.gameMode
     readonly property color notchSolid: Colors.notchTint(Config.notchColor)
     readonly property int sideMargin: Config.sideMargin
     readonly property int flare: Config.flare           // radius of the inverted top corner
@@ -150,8 +150,8 @@ Scope {
         function stage(): void { ShellState.toggleStage(); }
         function close(): void { ShellState.closePanel(); }
         // Page of the open Control Centre (0 painel … 4 rices), and do-not-disturb.
-        function page(n: int): void { ShellState.controlGo(n); }
-        function dnd(state: string): void { ShellState.dnd = state === "on"; }
+        function page(n: int): void { NotificationCenter.controlGo(n); }
+        function dnd(state: string): void { NotificationCenter.dnd = state === "on"; }
 
         // Note down and give back the open panel. Used by the screenshot tool
         // (~/.config/glasstty/scripts/capture-region.sh): to photograph the notch
@@ -163,7 +163,7 @@ Scope {
         function restore(name: string): void {
             if (name !== "" && ShellState.panel !== name) ShellState.togglePanel(name);
         }
-        function bright(dir: string): void { ShellState.stepBrightness(dir); }
+        function bright(dir: string): void { Brightness.stepBrightness(dir); }
         // It now accepts any of the transient faces by name, not just three.
         // Useful for triggering them from a script and, above all, for being
         // able to SEE them while working on the design without having to plug
@@ -355,7 +355,7 @@ Scope {
                 onCleared: ShellState.closePanel()
             }
 
-            IdleInhibitor { window: win; enabled: ShellState.caffeine && win.primary }
+            IdleInhibitor { window: win; enabled: Caffeine.caffeine && win.primary }
 
             Item {
                 id: surface
@@ -409,7 +409,7 @@ Scope {
                         iconColor: Colors.accent
                         hpad: 7
                         onClicked: ShellState.togglePanel("launcher")
-                        onScrolled: function (d) { ShellState.nudgeVolume(d); }
+                        onScrolled: function (d) { Audio.nudgeVolume(d); }
                     }
 
                     // The workspace indicator TRAVELS.
@@ -895,27 +895,27 @@ Scope {
                         id: gameItem
                         parent: win.slotFor("game")
                         anchors.verticalCenter: parent.verticalCenter
-                        visible: ShellState.gameMode && win.shows("game")
-                        readonly property bool low: ShellState.gameRunning && ShellState.gameFps < 30
+                        visible: GameMode.gameMode && win.shows("game")
+                        readonly property bool low: GameMode.gameRunning && GameMode.gameFps < 30
                         icon: Icons.gamepad
                         iconColor: Colors.accent
-                        label: !ShellState.gameRunning ? ""
-                            : ShellState.gameFps + " fps  ·  CPU " + ShellState.gameCpu + "%"
-                              + "  ·  GPU " + ShellState.gameGpu + "%"
-                              + (ShellState.gameCpuTemp > 0 ? "  ·  " + ShellState.gameCpuTemp + "°" : "")
+                        label: !GameMode.gameRunning ? ""
+                            : GameMode.gameFps + " fps  ·  CPU " + GameMode.gameCpu + "%"
+                              + "  ·  GPU " + GameMode.gameGpu + "%"
+                              + (GameMode.gameCpuTemp > 0 ? "  ·  " + GameMode.gameCpuTemp + "°" : "")
                         labelColor: gameItem.low ? Colors.crit : Colors.fg
-                        onClicked: ShellState.toggleGameMode()
+                        onClicked: GameMode.toggleGameMode()
                     }
 
                     BarItem {
                         id: battItem
                         parent: win.slotFor("battery")
                         anchors.verticalCenter: parent.verticalCenter
-                        visible: ShellState.batt >= 0 && win.shows("battery")
-                        readonly property bool low: !ShellState.ac && ShellState.batt <= 15
-                        icon: ShellState.battIcon
-                        label: ShellState.batt + "%"
-                        iconColor: battItem.low ? Colors.crit : (ShellState.ac ? Colors.accent : Colors.fg)
+                        visible: SystemStats.batt >= 0 && win.shows("battery")
+                        readonly property bool low: !SystemStats.ac && SystemStats.batt <= 15
+                        icon: SystemStats.battIcon
+                        label: SystemStats.batt + "%"
+                        iconColor: battItem.low ? Colors.crit : (SystemStats.ac ? Colors.accent : Colors.fg)
                         labelColor: battItem.low ? Colors.crit : Colors.fg
                         onClicked: ShellState.togglePanel("system")
                     }
@@ -1178,8 +1178,8 @@ Scope {
                         onEntered: if (Config.hoverPreview) dwell.restart()
                         onExited: { dwell.stop(); ShellState.hovered = false; }
                         onClicked: function (m) {
-                            if (m.button === Qt.RightButton && ShellState.player)
-                                ShellState.player.isPlaying ? ShellState.player.pause() : ShellState.player.play();
+                            if (m.button === Qt.RightButton && Media.player)
+                                Media.player.isPlaying ? Media.player.pause() : Media.player.play();
                             else ShellState.togglePanel("control");
                         }
                         // Two axes, two things. The vertical one was all there was
@@ -1202,7 +1202,7 @@ Scope {
                             // The `dy !== 0` is not superfluous: `dy > 0 ? 1 : -1`
                             // turns a zero into -1, so a purely horizontal gesture
                             // turned the volume down without anyone asking.
-                            if (dy !== 0) ShellState.nudgeVolume(dy > 0 ? 1 : -1);
+                            if (dy !== 0) Audio.nudgeVolume(dy > 0 ? 1 : -1);
                         }
                     }
 

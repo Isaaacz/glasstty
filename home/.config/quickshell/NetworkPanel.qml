@@ -18,7 +18,7 @@ Item {
     // the keyboard's Enter indexes it. If each one worked it out on its own,
     // it would only take one of them changing criteria for Enter to activate
     // a different network from the one highlighted.
-    readonly property var nets: ShellState.wifiOn ? ShellState.wifiNetworks : []
+    readonly property var nets: NetworkState.wifiOn ? NetworkState.wifiNetworks : []
     // SSID whose row is unfolded asking for a password
     property string askingFor: ""
     property string errorFor: ""
@@ -59,8 +59,8 @@ Item {
             spacing: 10
 
             Text {
-                text: ShellState.netIcon
-                color: ShellState.online ? Colors.accentInk : Colors.label3
+                text: NetworkState.netIcon
+                color: NetworkState.online ? Colors.accentInk : Colors.label3
                 font.family: Appearance.font; font.pixelSize: 18
             }
             ColumnLayout {
@@ -74,9 +74,9 @@ Item {
                     // "Wi-Fi apagado" (Wi-Fi off) only when there is a radio to TURN ON.
                     // On a machine with no adapter that phrase invites you to look for
                     // the switch that fixes it, and there is none.
-                    text: ShellState.wiredDev ? I18n.tr("Cable conectado")
-                        : ShellState.wifiNet ? ShellState.wifiNet.name
-                        : (ShellState.wifiOn || !ShellState.hasWifi) ? I18n.tr("Sin conexión") : I18n.tr("Wi-Fi apagado")
+                    text: NetworkState.wiredDev ? I18n.tr("Cable conectado")
+                        : NetworkState.wifiNet ? NetworkState.wifiNet.name
+                        : (NetworkState.wifiOn || !NetworkState.hasWifi) ? I18n.tr("Sin conexión") : I18n.tr("Wi-Fi apagado")
                     color: Colors.label2
                     font.family: Appearance.fontUI; font.pixelSize: Appearance.fsXS
                 }
@@ -85,22 +85,22 @@ Item {
 
             // wifi switch — only if there is a radio to turn on
             Rectangle {
-                visible: ShellState.hasWifi
+                visible: NetworkState.hasWifi
                 implicitWidth: 42; implicitHeight: 23
                 radius: 12
-                color: ShellState.wifiOn ? Colors.accent : Colors.fill1
+                color: NetworkState.wifiOn ? Colors.accent : Colors.fill1
                 Behavior on color { ColorAnimation { duration: Appearance.mQuick; easing.type: Easing.OutQuad } }
                 Rectangle {
                     width: 17; height: 17; radius: 9
                     color: "#ffffff"
                     y: 3
-                    x: ShellState.wifiOn ? parent.width - width - 3 : 3
+                    x: NetworkState.wifiOn ? parent.width - width - 3 : 3
                     Behavior on x { NumberAnimation { duration: Appearance.mQuick; easing.type: Easing.OutCubic } }
                 }
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: ShellState.toggleWifi()
+                    onClicked: NetworkState.toggleWifi()
                 }
             }
         }
@@ -140,8 +140,8 @@ Item {
                 const n = root.nets[list.currentIndex];
                 if (!n || n.connected) return;
                 root.errorFor = "";
-                if (n.known || !ShellState.isSecured(n)) n.connect();
-                else if (ShellState.isEnterprise(n)) ShellState.editEnterprise(n);
+                if (n.known || !NetworkState.isSecured(n)) n.connect();
+                else if (NetworkState.isEnterprise(n)) NetworkState.editEnterprise(n);
                 else root.askingFor = n.name || "";
             }
 
@@ -152,8 +152,8 @@ Item {
 
                 readonly property string ssid: modelData.name || ""
                 readonly property bool asking: root.askingFor === netRow.ssid
-                readonly property bool secured: ShellState.isSecured(modelData)
-                readonly property bool enterprise: ShellState.isEnterprise(modelData)
+                readonly property bool secured: NetworkState.isSecured(modelData)
+                readonly property bool enterprise: NetworkState.isEnterprise(modelData)
 
                 width: list.width
                 height: netRow.asking ? 88 : 44
@@ -187,7 +187,7 @@ Item {
                         spacing: 11
 
                         Text {
-                            text: ShellState.wifiIconFor(netRow.modelData.signalStrength || 0)
+                            text: NetworkState.wifiIconFor(netRow.modelData.signalStrength || 0)
                             color: netRow.modelData.connected ? Colors.accentInk : Colors.label
                             font.family: Appearance.font; font.pixelSize: 15
                         }
@@ -239,7 +239,7 @@ Item {
                                 id: editMa
                                 anchors.fill: parent; anchors.margins: -6
                                 hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                onClicked: ShellState.editEnterprise(netRow.modelData)
+                                onClicked: NetworkState.editEnterprise(netRow.modelData)
                             }
                         }
 
@@ -320,7 +320,7 @@ Item {
                 function tryConnect() {
                     root.errorFor = "";
                     if (netRow.enterprise && !netRow.modelData.known) {
-                        ShellState.editEnterprise(netRow.modelData);
+                        NetworkState.editEnterprise(netRow.modelData);
                     } else if (netRow.secured && !netRow.modelData.known) netRow.modelData.connectWithPsk(pskField.text);
                     else netRow.modelData.connect();
                     root.askingFor = "";
@@ -338,7 +338,7 @@ Item {
                         // Saved or open -> straight away; EAP -> safe editor;
                         // only a new PSK network unfolds a key field.
                         if (netRow.modelData.known || !netRow.secured) netRow.modelData.connect();
-                        else if (netRow.enterprise) ShellState.editEnterprise(netRow.modelData);
+                        else if (netRow.enterprise) NetworkState.editEnterprise(netRow.modelData);
                         else root.askingFor = netRow.asking ? "" : netRow.ssid;
                     }
                 }
@@ -348,11 +348,11 @@ Item {
         Text {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            visible: !ShellState.wifiOn || ShellState.wifiNetworks.length === 0
+            visible: !NetworkState.wifiOn || NetworkState.wifiNetworks.length === 0
             // With no adapter the list is empty FOREVER, so saying
             // "Buscando redes…" (searching for networks) would be a wait that never ends.
-            text: !ShellState.hasWifi ? (ShellState.wiredDev ? I18n.tr("Este equipo va por cable") : I18n.tr("Este equipo no tiene Wi-Fi"))
-                : !ShellState.wifiOn ? I18n.tr("Wi-Fi apagado") : I18n.tr("Buscando redes…")
+            text: !NetworkState.hasWifi ? (NetworkState.wiredDev ? I18n.tr("Este equipo va por cable") : I18n.tr("Este equipo no tiene Wi-Fi"))
+                : !NetworkState.wifiOn ? I18n.tr("Wi-Fi apagado") : I18n.tr("Buscando redes…")
             color: Colors.label3
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
